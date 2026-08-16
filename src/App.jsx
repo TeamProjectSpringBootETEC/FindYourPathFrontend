@@ -11,6 +11,7 @@ function App() {
       {/* Navbar sits outside Routes so it stays visible on every page */}
       <Navbar />
       <main className="mx-auto max-w-2xl px-4 pt-6 pb-16">
+        <h1>Header</h1>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
