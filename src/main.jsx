@@ -6,9 +6,8 @@ import './index.css'
 
 // BrowserRouter must wrap App so any component inside can use routing (Link, useNavigate, etc.)
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
     <BrowserRouter>
       <App />
     </BrowserRouter>
-  </StrictMode>,
+  
 )
