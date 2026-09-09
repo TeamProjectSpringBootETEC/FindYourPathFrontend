@@ -7,10 +7,10 @@ function Banner() {
     <>
       <section className="relative overflow-hidden bg-gradient-to-br from-white via-blue-50 to-blue-100">
         {/* Background Decorations */}
-        <div className="absolute -left-20 top-20 h-64 w-64 rounded-full bg-blue-100/60 blur-3xl"></div>
+        <div className="absolute -left-20 top-10 h-64 w-64 rounded-full bg-blue-100/60 blur-3xl"></div>
         <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-blue-200/40 blur-3xl"></div>
 
-        <div className="relative mx-auto max-w-7xl px-6 py-16 lg:px-8 lg:py-20">
+        <div className="relative mx-auto max-w-7xl px-6 py-16 lg:px-8 lg:py-12">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             {/* ================= LEFT ================= */}
             <div className="max-w-2xl">

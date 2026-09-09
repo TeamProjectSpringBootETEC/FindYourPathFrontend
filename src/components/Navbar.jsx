@@ -43,8 +43,9 @@ function Navbar() {
   return (
     <nav className="sticky top-0 z-50 flex items-center justify-between border-b border-gray-100 bg-white px-8 py-4 shadow-sm">
       {/* ================= LOGO ================= */}
-      <Link to="/" className="text-2xl font-bold text-blue-600">
-        Job Website
+      <Link to="/" className="text-2xl font-semibold ">
+        <span className="font-bold text-4xl">Find </span>
+        <span className="font-bold text-blue-600">Scholarships & Jobs</span>
       </Link>
 
       {/* ================= NAVIGATION ================= */}
