@@ -4,6 +4,7 @@ import { NavLink, Link } from "react-router-dom";
 function Navbar() {
   const [selectedLang, setSelectedLang] = useState("English");
   const [langOpen, setLangOpen] = useState(false);
+
   const langDropdownRef = useRef(null);
 
   const navLinks = [
@@ -21,7 +22,7 @@ function Navbar() {
     { code: "km", name: "Khmer" },
   ];
 
-  // Close dropdown when clicking outside
+  // Close language dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -31,15 +32,22 @@ function Navbar() {
         setLangOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   return (
-    <nav className="flex justify-between items-center px-8 py-4 bg-white shadow-sm border-b border-gray-100">
-      <h1 className="text-2xl text-blue-600 font-bold">Job Website</h1>
+    <nav className="sticky top-0 z-50 flex items-center justify-between border-b border-gray-100 bg-white px-8 py-4 shadow-sm">
+      {/* ================= LOGO ================= */}
+      <Link to="/" className="text-2xl font-bold text-blue-600">
+        Job Website
+      </Link>
 
-      {/* Navigation Links */}
+      {/* ================= NAVIGATION ================= */}
       <div className="flex items-center gap-8">
         {navLinks.map((link) => (
           <NavLink
@@ -48,7 +56,7 @@ function Navbar() {
             className={({ isActive }) =>
               `relative py-2 text-base font-medium transition-colors ${
                 isActive
-                  ? "text-blue-600 font-semibold after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-blue-600 after:rounded-full"
+                  ? "font-semibold text-blue-600 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-blue-600"
                   : "text-gray-700 hover:text-blue-600"
               }`
             }
@@ -58,18 +66,19 @@ function Navbar() {
         ))}
       </div>
 
-      {/* Right Controls */}
+      {/* ================= RIGHT CONTROLS ================= */}
       <div className="flex items-center gap-6">
-        {/* Language Selector Dropdown */}
-        <div className="relative" ref={langDropdownRef}>
+        {/* ================= LANGUAGE ================= */}
+        <div className="relative z-[100]" ref={langDropdownRef}>
           <button
             type="button"
             onClick={() => setLangOpen(!langOpen)}
-            className="flex items-center gap-1.5 text-gray-700 hover:text-blue-600 font-medium focus:outline-none"
+            className="flex items-center gap-1.5 font-medium text-gray-700 transition-colors hover:text-blue-600 focus:outline-none"
           >
+            {/* Globe Icon */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="w-5 h-5 text-gray-600"
+              className="h-5 w-5 text-gray-600"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -80,21 +89,27 @@ function Navbar() {
                 strokeLinejoin="round"
                 d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
+
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 d="M3.6 9h16.8M3.6 15h16.8"
               />
+
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 d="M11.5 3a17 17 0 000 18M12.5 3a17 17 0 010 18"
               />
             </svg>
+
+            {/* Selected Language */}
             <span>{selectedLang}</span>
+
+            {/* Arrow */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className={`w-4 h-4 text-gray-500 transition-transform ${
+              className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${
                 langOpen ? "rotate-180" : ""
               }`}
               fill="none"
@@ -110,9 +125,9 @@ function Navbar() {
             </svg>
           </button>
 
-          {/* Language Dropdown List */}
+          {/* ================= LANGUAGE DROPDOWN ================= */}
           {langOpen && (
-            <div className="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50">
+            <div className="absolute right-0 top-full z-[100] mt-2 w-36 overflow-hidden rounded-lg border border-gray-100 bg-white py-1 shadow-xl">
               {languages.map((lang) => (
                 <button
                   key={lang.code}
@@ -121,10 +136,10 @@ function Navbar() {
                     setSelectedLang(lang.name);
                     setLangOpen(false);
                   }}
-                  className={`block w-full text-left px-4 py-2 text-sm transition-colors hover:bg-gray-50 hover:text-blue-600 ${
+                  className={`block w-full px-4 py-2.5 text-left text-sm transition-colors ${
                     lang.name === selectedLang
-                      ? "font-semibold text-blue-600 bg-blue-50/50"
-                      : "text-gray-700"
+                      ? "bg-blue-50 font-semibold text-blue-600"
+                      : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
                   }`}
                 >
                   {lang.name}
@@ -134,14 +149,15 @@ function Navbar() {
           )}
         </div>
 
-        {/* Notification Bell */}
+        {/* ================= NOTIFICATION ================= */}
         <button
-          className="text-gray-600 hover:text-blue-600 p-1"
+          type="button"
+          className="p-1 text-gray-600 transition-colors hover:text-blue-600"
           aria-label="Notifications"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="w-5 h-5"
+            className="h-5 w-5"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -155,18 +171,18 @@ function Navbar() {
           </svg>
         </button>
 
-        {/* Login Link */}
+        {/* ================= LOGIN ================= */}
         <Link
           to="/login"
-          className="text-blue-600 font-semibold hover:underline"
+          className="font-semibold text-blue-600 transition-colors hover:text-blue-700 hover:underline"
         >
           Login
         </Link>
 
-        {/* Register Button */}
+        {/* ================= REGISTER ================= */}
         <Link
           to="/register"
-          className="bg-blue-600 text-white font-medium px-6 py-2.5 rounded-full hover:bg-blue-700 transition-colors shadow-sm"
+          className="rounded-full bg-blue-600 px-6 py-2.5 font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
         >
           Register
         </Link>
