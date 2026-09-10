@@ -25,6 +25,7 @@ const Sidebar = () => {
       icon: GraduationCap,
     },
     { name: "Jobs", path: "/dashboard/jobs", icon: BriefcaseIcon },
+    { name: "Job categories", path: "/dashboard/categories", icon: BriefcaseIcon },
     { name: "Events", path: "/dashboard/events", icon: CalendarDays },
     { name: "Scholarships", path: "/dashboard/scholarships", icon: Award },
     { name: "Applications", path: "/dashboard/applications", icon: FileText },

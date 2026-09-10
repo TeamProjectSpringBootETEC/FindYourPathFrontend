@@ -3,6 +3,7 @@ import { Route, Routes, Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "@/components/Dashboards/header/Sidebar";
 import Home from "../pages/Home";
+import CategoryJob from "@/components/Dashboards/contants/CategoryJob";
 
 // Layout for Public Pages (with Navbar)
 const PublicLayout = () => {
@@ -49,6 +50,7 @@ function RouteApp() {
         <Route path="companies" element={<h1 className="text-2xl font-bold">Admin Companies Page</h1>} />
         <Route path="universities" element={<h1 className="text-2xl font-bold">Admin Universities Page</h1>} />
         <Route path="jobs" element={<h1 className="text-2xl font-bold">Admin Jobs Page</h1>} />
+        <Route path="categories" element={<CategoryJob/>} />
         <Route path="events" element={<h1 className="text-2xl font-bold">Admin Events</h1>} />
         <Route path="scholarships" element={<h1 className="text-2xl font-bold">Admin Scholarships Page</h1>} />
         <Route path="applications" element={<h1 className="text-2xl font-bold">Applications Page</h1>} />
