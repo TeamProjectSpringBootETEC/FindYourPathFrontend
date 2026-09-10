@@ -30,6 +30,7 @@ function CategoryJob() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    jobs:""
   });
 
   // 1. READ: Fetch Categories from API
@@ -238,6 +239,7 @@ function CategoryJob() {
                   <th className="py-3.5 px-6">ID</th>
                   <th className="py-3.5 px-6">Category Name</th>
                   <th className="py-3.5 px-6">Description</th>
+                  <th className="py-3.5 px-6">Job</th>
                   <th className="py-3.5 px-6 text-right">Actions</th>
                 </tr>
               </thead>
@@ -256,6 +258,7 @@ function CategoryJob() {
                     <td className="py-4 px-6 text-slate-600 max-w-md truncate">
                       {item.description || "N/A"}
                     </td>
+                    <td className="py-4 px-6 font-semibold text-slate-900">2</td>
                     <td className="py-4 px-6 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {/* Edit Button */}
