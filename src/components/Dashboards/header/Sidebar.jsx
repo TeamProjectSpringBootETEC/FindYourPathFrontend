@@ -11,6 +11,7 @@ import {
   FileText,
   Settings,
   Bell,
+  CalendarDays,
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -24,6 +25,7 @@ const Sidebar = () => {
       icon: GraduationCap,
     },
     { name: "Jobs", path: "/dashboard/jobs", icon: BriefcaseIcon },
+    { name: "Events", path: "/dashboard/events", icon: CalendarDays },
     { name: "Scholarships", path: "/dashboard/scholarships", icon: Award },
     { name: "Applications", path: "/dashboard/applications", icon: FileText },
   ];
@@ -42,8 +44,8 @@ const Sidebar = () => {
             <Briefcase size={22} />
           </div>
           <div>
-            <h1 className="font-bold text-indigo-900 leading-tight">
-              Admin Console
+            <h1 className="font-bold text-indigo-900 leading-tight text-2xl">
+              Management
             </h1>
             <p className="text-[10px] font-semibold text-slate-400 tracking-wider uppercase">
               Enterprise Management
