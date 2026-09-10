@@ -6,8 +6,8 @@ function App() {
   return (
     <>
       <div>
-        <Navbar />
         <main>
+          {/* <Navbar /> */}
           <RouteApp />
         </main>
       </div>
