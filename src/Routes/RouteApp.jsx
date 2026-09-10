@@ -4,6 +4,8 @@ import Navbar from "../components/Navbar";
 import Sidebar from "@/components/Dashboards/header/Sidebar";
 import Home from "../pages/Home";
 import CategoryJob from "@/components/Dashboards/contants/CategoryJob";
+import Company from "@/components/Dashboards/contants/Company";
+import Users from "@/components/Dashboards/contants/Users";
 
 // Layout for Public Pages (with Navbar)
 const PublicLayout = () => {
@@ -46,8 +48,8 @@ function RouteApp() {
       {/* Dashboard Pages -> Shows Sidebar (No Navbar) */}
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<h1 className="text-2xl font-bold">Overview Dashboard</h1>} />
-        <Route path="users" element={<h1 className="text-2xl font-bold">User Directory Page</h1>} />
-        <Route path="companies" element={<h1 className="text-2xl font-bold">Admin Companies Page</h1>} />
+        <Route path="users" element={<Users/>} />
+        <Route path="companies" element={<Company/>} />
         <Route path="universities" element={<h1 className="text-2xl font-bold">Admin Universities Page</h1>} />
         <Route path="jobs" element={<h1 className="text-2xl font-bold">Admin Jobs Page</h1>} />
         <Route path="categories" element={<CategoryJob/>} />

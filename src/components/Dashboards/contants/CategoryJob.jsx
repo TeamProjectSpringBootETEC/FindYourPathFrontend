@@ -258,7 +258,7 @@ function CategoryJob() {
                     <td className="py-4 px-6 text-slate-600 max-w-md truncate">
                       {item.description || "N/A"}
                     </td>
-                    <td className="py-4 px-6 font-semibold text-slate-900">2</td>
+                    <td className="py-4 px-6 font-semibold text-slate-900">1</td>
                     <td className="py-4 px-6 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {/* Edit Button */}
