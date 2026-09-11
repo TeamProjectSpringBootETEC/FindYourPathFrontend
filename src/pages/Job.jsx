@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Search,
   MapPin,
@@ -11,7 +11,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { initialJobs } from '@/data/jobs';
+import { getAllJob } from '@/service/JobApi';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -31,6 +31,17 @@ const SORT_OPTIONS = [
   { value: 'salary-low', label: 'Salary: Low to High' },
 ];
 
+const getDeadlineInfo = (deadline) => {
+  if (!deadline) return { text: 'No deadline', expired: false };
+  const target = new Date(`${deadline}T00:00:00`);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+  if (days < 0) return { text: 'Expired', expired: true };
+  if (days === 0) return { text: 'Expires today', expired: false };
+  return { text: `${days} days left`, expired: false };
+};
+
 export default function Job() {
   const [searchQuery, setSearchQuery] = useState('');
   const [jobField, setJobField] = useState('All');
@@ -49,9 +60,28 @@ export default function Job() {
     search: '',
     field: 'All',
     categories: { frontend: false, backend: false, uiux: false, productManager: false },
-    type: '',
+    jobType: '',
     salary: 5000,
   });
+
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        setLoading(true);
+        const data = await getAllJob();
+        setJobs(data);
+      } catch (error) {
+        setError("Failed to load jobs");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJobs();
+  }, []);
 
   const toggleBookmark = (id) => {
     setJobs((prev) =>
@@ -59,14 +89,12 @@ export default function Job() {
     );
   };
 
-  const [jobs, setJobs] = useState(initialJobs);
-
   const handleApplyFilters = () => {
     setAppliedFilters({
       search: searchQuery,
       field: jobField,
       categories: { ...selectedCategories },
-      type: employmentType,
+      jobType: employmentType,
       salary: salaryRange,
     });
     setCurrentPage(1);
@@ -83,14 +111,14 @@ export default function Job() {
       search: '',
       field: 'All',
       categories: { frontend: false, backend: false, uiux: false, productManager: false },
-      type: '',
+      jobType: '',
       salary: 5000,
     });
     setCurrentPage(1);
   };
 
   const filteredJobs = useMemo(() => {
-    let result = [...jobs];
+    let result = [...jobs].filter((job) => !getDeadlineInfo(job.deadline).expired);
 
     // Search filter
     if (appliedFilters.search.trim()) {
@@ -98,9 +126,8 @@ export default function Job() {
       result = result.filter(
         (job) =>
           job.title.toLowerCase().includes(q) ||
-          job.company.toLowerCase().includes(q) ||
-          job.location.toLowerCase().includes(q) ||
-          job.tags.some((tag) => tag.toLowerCase().includes(q))
+          (job.companyName || '').toLowerCase().includes(q) ||
+          job.location.toLowerCase().includes(q)
       );
     }
 
@@ -114,17 +141,17 @@ export default function Job() {
       .filter(([, v]) => v)
       .map(([k]) => k);
     if (activeCategories.length > 0) {
-      result = result.filter((job) => activeCategories.includes(job.category));
+      result = result.filter((job) => activeCategories.includes(job.jobCategoryName));
     }
 
     // Employment type filter
-    if (appliedFilters.type) {
-      result = result.filter((job) => job.type === appliedFilters.type);
+    if (appliedFilters.jobType) {
+      result = result.filter((job) => job.jobType === appliedFilters.jobType);
     }
 
     // Salary filter
     if (appliedFilters.salary < 5000) {
-      result = result.filter((job) => job.salaryMin <= appliedFilters.salary);
+      result = result.filter((job) => Number(job.salary) <= appliedFilters.salary);
     }
 
     // Sort
@@ -136,10 +163,10 @@ export default function Job() {
         result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
         break;
       case 'salary-high':
-        result.sort((a, b) => b.salaryMax - a.salaryMax);
+        result.sort((a, b) => Number(b.salary) - Number(a.salary));
         break;
       case 'salary-low':
-        result.sort((a, b) => a.salaryMin - b.salaryMin);
+        result.sort((a, b) => Number(a.salary) - Number(b.salary));
         break;
       default:
         break;
@@ -177,7 +204,24 @@ export default function Job() {
     return pages;
   };
 
+
   const navigate = useNavigate();
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p>Loading jobs...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50/50 font-sans text-gray-800 p-4 md:p-8">
@@ -189,7 +233,7 @@ export default function Job() {
             <Search className="w-5 h-5 text-gray-400 shrink-0" />
             <input
               type="text"
-              placeholder="Search by job title, keywords, or company..."
+              placeholder="Search by job title, keywords, or companyName..."
               className="w-full bg-transparent text-sm focus:outline-none text-gray-700 placeholder-gray-400"
               value={searchQuery}
               onChange={(e) => {
@@ -273,11 +317,10 @@ export default function Job() {
                   <button
                     key={type}
                     onClick={() => setEmploymentType(employmentType === type ? '' : type)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                      employmentType === type
-                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${employmentType === type
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
                   >
                     {type}
                   </button>
@@ -344,9 +387,8 @@ export default function Job() {
                           setShowSortDropdown(false);
                           setCurrentPage(1);
                         }}
-                        className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 transition-colors ${
-                          sortBy === option.value ? 'text-blue-600 font-semibold bg-blue-50' : 'text-gray-700'
-                        }`}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 transition-colors ${sortBy === option.value ? 'text-blue-600 font-semibold bg-blue-50' : 'text-gray-700'
+                          }`}
                       >
                         {option.label}
                       </button>
@@ -380,7 +422,7 @@ export default function Job() {
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
                         <span className="font-bold text-xs text-blue-600">
-                          {job.company.substring(0, 2).toUpperCase()}
+                          {(job.companyName || 'NA').substring(0, 2).toUpperCase()}
                         </span>
                       </div>
 
@@ -390,14 +432,14 @@ export default function Job() {
                             {job.title}
                           </h3>
                         </div>
-                        <p className="text-sm font-medium text-blue-600">{job.company}</p>
+                        <p className="text-sm font-medium text-blue-600">{job.companyName}</p>
 
                         <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 pt-1">
                           <span className="flex items-center gap-1">
                             <MapPin className="w-3.5 h-3.5 text-gray-400" /> {job.location}
                           </span>
                           <span className="flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-gray-400" /> {job.type}
+                            <Clock className="w-3.5 h-3.5 text-gray-400" /> {job.jobType}
                           </span>
                           <span className="flex items-center gap-1 font-semibold text-gray-700">
                             <DollarSign className="w-3.5 h-3.5 text-gray-400" /> {job.salary}
@@ -405,14 +447,14 @@ export default function Job() {
                         </div>
 
                         <div className="flex flex-wrap gap-2 pt-2">
-                          {job.tags.map((tag, i) => (
+                          {/* {job.tags.map((tag, i) => (
                             <span
                               key={i}
                               className="bg-blue-50/60 text-blue-600 text-xs px-2.5 py-1 rounded-md font-medium"
                             >
                               {tag}
                             </span>
-                          ))}
+                          ))} */}
                         </div>
                       </div>
                     </div>
@@ -433,12 +475,12 @@ export default function Job() {
 
                         <span
                           className={`text-xs px-3 py-1 rounded-full font-medium ${
-                            job.featured
-                              ? 'bg-purple-100 text-purple-700 font-semibold'
-                              : 'bg-red-50 text-red-500'
+                            getDeadlineInfo(job.deadline).expired
+                              ? 'bg-red-50 text-red-500'
+                              : 'bg-green-50 text-green-600'
                           }`}
                         >
-                          {job.timeLeft}
+                          {getDeadlineInfo(job.deadline).text}
                         </span>
                       </div>
 
@@ -448,9 +490,9 @@ export default function Job() {
                         </div>
                       )}
 
-                      <button 
-                      onClick={()=>navigate(`/detail/${job.id}`)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-xs font-semibold shadow-sm shadow-blue-200 transition-colors">
+                      <button
+                        onClick={() => navigate(`/detail/${job.id}`)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-xs font-semibold shadow-sm shadow-blue-200 transition-colors">
                         Job Detail
                       </button>
                     </div>
@@ -480,11 +522,10 @@ export default function Job() {
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`w-10 h-10 rounded-xl font-semibold text-sm transition-all ${
-                        currentPage === page
-                          ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
-                          : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                      }`}
+                      className={`w-10 h-10 rounded-xl font-semibold text-sm transition-all ${currentPage === page
+                        ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
+                        : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
                     >
                       {page}
                     </button>
