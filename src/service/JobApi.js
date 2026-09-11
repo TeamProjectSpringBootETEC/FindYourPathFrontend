@@ -12,4 +12,14 @@ export const getJobById = async (id) => {
   return response.data;
 };
 
+export const getAllJobFields = async () => {
+  const response = await api.get("/job-fields");
+  return response.data;
+};
+
+export const getAllJobCategories = async () => {
+  const response = await api.get("/job-categories");
+  return response.data;
+};
+
 
