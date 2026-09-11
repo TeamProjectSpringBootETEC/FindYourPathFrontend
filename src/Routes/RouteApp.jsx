@@ -6,8 +6,8 @@ import Home from "../pages/Home";
 import CategoryJob from "@/components/Dashboards/contants/CategoryJob";
 import Job from "@/pages/Job";
 import JobDetail from "@/pages/detail/JobDetail";
-import Scholarships from "@/pages/Scholarships";
-import ScholarshipDetail from "@/pages/detail/ScholarshipDetail";
+import Events from "@/pages/Events";
+import EventDetail from "@/pages/detail/EventDetail";
 
 // Layout for Public Pages (with Navbar)
 const PublicLayout = () => {
@@ -41,9 +41,8 @@ function RouteApp() {
         <Route path="/" element={<Home />} />
         <Route path="/job" element={<Job/>} />
         <Route path="/detail/:id" element={<JobDetail />} />
-        <Route path="/scholarships" element={<Scholarships />} />
-        <Route path="/scholarship/:id" element={<ScholarshipDetail />} />
-        <Route path="/events" element={<h1 className="p-4 text-2xl font-bold">Events Page</h1>} />
+        <Route path="/events" element={<Events/>} />
+        <Route path="/event/:id" element={<EventDetail />} />
         <Route path="/companies" element={<h1 className="p-4 text-2xl font-bold">Companies Page</h1>} />
         <Route path="/universities" element={<h1 className="p-4 text-2xl font-bold">Universities Page</h1>} />
         <Route path="/about" element={<h1 className="p-4 text-2xl font-bold">About Us Page</h1>} />
