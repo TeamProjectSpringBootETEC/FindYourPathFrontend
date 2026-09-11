@@ -11,8 +11,6 @@ function Navbar() {
     { name: "Home", path: "/" },
     { name: "Jobs", path: "/job" },
     { name: "Events", path: "/events" },
-    { name: "Companies", path: "/companies" },
-    { name: "Universities", path: "/universities" },
     { name: "About Us", path: "/about" },
   ];
 

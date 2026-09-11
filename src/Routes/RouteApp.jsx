@@ -8,6 +8,7 @@ import Job from "@/pages/Job";
 import JobDetail from "@/pages/detail/JobDetail";
 import Events from "@/pages/Events";
 import EventDetail from "@/pages/detail/EventDetail";
+import Register from "@/pages/Register";
 
 // Layout for Public Pages (with Navbar)
 const PublicLayout = () => {
@@ -47,6 +48,9 @@ function RouteApp() {
         <Route path="/universities" element={<h1 className="p-4 text-2xl font-bold">Universities Page</h1>} />
         <Route path="/about" element={<h1 className="p-4 text-2xl font-bold">About Us Page</h1>} />
       </Route>
+
+      {/* Auth Pages -> No Navbar / Footer */}
+      <Route path="/register" element={<Register />} />
 
       {/* Dashboard Pages -> Shows Sidebar (No Navbar) */}
       <Route path="/dashboard" element={<DashboardLayout />}>
