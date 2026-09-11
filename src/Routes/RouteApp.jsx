@@ -4,18 +4,16 @@ import Navbar from "../components/Navbar";
 import Sidebar from "@/components/Dashboards/header/Sidebar";
 import Home from "../pages/Home";
 import CategoryJob from "@/components/Dashboards/contants/CategoryJob";
-<<<<<<< HEAD
 import Job from "@/pages/Job";
 import JobDetail from "@/pages/detail/JobDetail";
 import Events from "@/pages/Events";
 import EventDetail from "@/pages/detail/EventDetail";
 import Register from "@/pages/Register";
 import Login from "@/pages/Login";
-=======
 import Company from "@/components/Dashboards/contants/Company";
 import Users from "@/components/Dashboards/contants/Users";
 import Jobs from "@/components/Dashboards/contants/Jobs";
->>>>>>> dashboard
+import AboutUs from "@/pages/AboutUs";
 
 // Layout for Public Pages (with Navbar)
 const PublicLayout = () => {
@@ -52,8 +50,7 @@ function RouteApp() {
         <Route path="/events" element={<Events/>} />
         <Route path="/event/:id" element={<EventDetail />} />
         <Route path="/companies" element={<h1 className="p-4 text-2xl font-bold">Companies Page</h1>} />
-        <Route path="/universities" element={<h1 className="p-4 text-2xl font-bold">Universities Page</h1>} />
-        <Route path="/about" element={<h1 className="p-4 text-2xl font-bold">About Us Page</h1>} />
+        <Route path="/about" element={<AboutUs/>} />
       </Route>
 
       {/* Auth Pages -> No Navbar / Footer */}
@@ -69,8 +66,6 @@ function RouteApp() {
         <Route path="jobs" element={<Jobs/>} />
         <Route path="categories" element={<CategoryJob/>} />
         <Route path="events" element={<h1 className="text-2xl font-bold">Admin Events</h1>} />
-        <Route path="scholarships" element={<h1 className="text-2xl font-bold">Admin Scholarships Page</h1>} />
-        <Route path="applications" element={<h1 className="text-2xl font-bold">Applications Page</h1>} />
         <Route path="settings" element={<h1 className="text-2xl font-bold">Settings Page</h1>} />
         <Route path="notifications" element={<h1 className="text-2xl font-bold">Notifications Page</h1>} />
       </Route>
