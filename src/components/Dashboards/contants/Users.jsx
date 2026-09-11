@@ -15,26 +15,38 @@ import {
 } from "lucide-react";
 
 const API_BASE_URL = "http://localhost:8089/api/v1/users";
+const ROLES_API_URL = "http://localhost:8089/api/v1/roles";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
   const [editingUser, setEditingUser] = useState(null);
 
-  // State mapping exactly to Database columns: email, name, password, status, role_id
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     status: "ACTIVE",
-    roleId: 1,
+    role_id: "",
   });
 
-  // 1. READ: Get users
+  // Safe Helper: ស្រង់យក Role ID ចេញពី Role Object
+  const getRoleIdFromItem = (role) => {
+    if (!role) return "";
+    return String(role.id ?? role.role_id ?? role.roleId ?? "");
+  };
+
+  // Safe Helper: ស្រង់យក Role Name ចេញពី Role Object
+  const getRoleNameFromItem = (role) => {
+    if (!role) return "";
+    return role.role_name || role.name || role.title || `Role #${getRoleIdFromItem(role)}`;
+  };
+
+  // Fetch Users
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -48,14 +60,32 @@ const Users = () => {
     }
   };
 
+  // Fetch Roles
+  const fetchRoles = async () => {
+    try {
+      const response = await axios.get(ROLES_API_URL);
+      const data = response.data.data || response.data;
+      const parsedRoles = Array.isArray(data) ? data : [];
+      setRoles(parsedRoles);
+    } catch (err) {
+      console.error("Failed to fetch roles:", err);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchRoles();
   }, []);
 
-  // 2. CREATE & UPDATE Handler
+  // Save / Update User
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.email.trim()) return;
+
+    if (!formData.role_id) {
+      alert("Please select a role.");
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -64,20 +94,16 @@ const Users = () => {
         name: formData.name,
         email: formData.email,
         status: formData.status,
-        roleId: Number(formData.roleId),
-        role_id: Number(formData.roleId),
+        role_id: Number(formData.role_id), // ឬផ្ញើជា Number ទៅកាន់ Backend
       };
 
-      // Only include password if creating a new user or updating it
       if (formData.password) {
         payload.password = formData.password;
       }
 
       if (editingUser) {
-        // PUT /api/v1/users/{id}
         await axios.put(`${API_BASE_URL}/${editingUser.id}`, payload);
       } else {
-        // POST /api/v1/users
         await axios.post(API_BASE_URL, payload);
       }
 
@@ -91,7 +117,7 @@ const Users = () => {
     }
   };
 
-  // 3. DELETE Handler (DELETE /api/v1/users/{id})
+  // Delete User
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
 
@@ -105,14 +131,25 @@ const Users = () => {
   };
 
   const openModal = (user = null) => {
+    const firstRoleId = roles.length > 0 ? getRoleIdFromItem(roles[0]) : "";
+
     if (user) {
       setEditingUser(user);
+      
+      // ស្រង់យក Role ID ពី User Object
+      const userRoleId =
+        user.role_id ??
+        user.roleId ??
+        user.role?.id ??
+        user.role?.role_id ??
+        firstRoleId;
+
       setFormData({
         name: user.name || "",
         email: user.email || "",
-        password: "", // Leave empty when editing unless changing
+        password: "",
         status: user.status || "ACTIVE",
-        roleId: user.roleId || user.role_id || 1,
+        role_id: String(userRoleId),
       });
     } else {
       setEditingUser(null);
@@ -121,7 +158,7 @@ const Users = () => {
         email: "",
         password: "",
         status: "ACTIVE",
-        roleId: 1,
+        role_id: firstRoleId,
       });
     }
     setIsModalOpen(true);
@@ -135,11 +172,30 @@ const Users = () => {
       email: "",
       password: "",
       status: "ACTIVE",
-      roleId: 1,
+      role_id: roles.length > 0 ? getRoleIdFromItem(roles[0]) : "",
     });
   };
 
-  // Filter Users
+  // មុខងារបង្ហាញឈ្មោះ Role ក្នុង តារាង (Table)
+  const getRoleName = (user) => {
+    const currentRoleId = String(
+      user.role_id ?? user.roleId ?? user.role?.id ?? ""
+    );
+
+    const matchedRole = roles.find(
+      (r) => getRoleIdFromItem(r) === currentRoleId
+    );
+
+    if (matchedRole) return getRoleNameFromItem(matchedRole);
+
+    return (
+      user.role_name ||
+      user.role?.role_name ||
+      user.role?.name ||
+      (currentRoleId ? `Role #${currentRoleId}` : "N/A")
+    );
+  };
+
   const filteredUsers = users.filter((u) => {
     const name = u.name || "";
     const email = u.email || "";
@@ -161,13 +217,12 @@ const Users = () => {
                 User Management
               </h1>
               <p className="text-xs font-medium text-slate-500">
-                Manage accounts, roles, and status mappings
+                Manage accounts and roles
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Search Input */}
             <div className="relative w-full sm:w-64">
               <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -180,7 +235,10 @@ const Users = () => {
             </div>
 
             <button
-              onClick={fetchUsers}
+              onClick={() => {
+                fetchUsers();
+                fetchRoles();
+              }}
               className="p-2.5 text-slate-500 hover:text-indigo-600 border border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100 transition"
               title="Refresh Data"
             >
@@ -203,7 +261,7 @@ const Users = () => {
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200/80 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 <th className="py-4 px-6">User</th>
-                <th className="py-4 px-6">Role ID</th>
+                <th className="py-4 px-6">Role</th>
                 <th className="py-4 px-6">Status</th>
                 <th className="py-4 px-6 text-right">Actions</th>
               </tr>
@@ -226,7 +284,7 @@ const Users = () => {
                 filteredUsers.map((user) => {
                   const name = user.name || "User";
                   const email = user.email || "-";
-                  const roleId = user.roleId || user.role_id || "-";
+                  const roleName = getRoleName(user);
                   const status = user.status || "ACTIVE";
 
                   return (
@@ -234,7 +292,6 @@ const Users = () => {
                       key={user.id}
                       className="hover:bg-slate-50/60 transition-colors group"
                     >
-                      {/* Name and Email */}
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3.5">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-semibold text-sm shadow-sm shrink-0">
@@ -250,15 +307,13 @@ const Users = () => {
                         </div>
                       </td>
 
-                      {/* Role ID */}
                       <td className="py-4 px-6">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-mono font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                          <Shield className="w-3 h-3 text-indigo-500" />
-                          Role ID: {roleId}
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                          <Shield className="w-3.5 h-3.5 text-indigo-500" />
+                          {roleName}
                         </span>
                       </td>
 
-                      {/* Status Badge */}
                       <td className="py-4 px-6">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -276,7 +331,6 @@ const Users = () => {
                         </span>
                       </td>
 
-                      {/* Actions */}
                       <td className="py-4 px-6 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
@@ -308,7 +362,6 @@ const Users = () => {
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-            {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
               <h2 className="text-lg font-bold text-slate-900">
                 {editingUser ? "Edit User" : "Add New User"}
@@ -321,9 +374,7 @@ const Users = () => {
               </button>
             </div>
 
-            {/* Modal Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {/* Name */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                   Name *
@@ -340,7 +391,6 @@ const Users = () => {
                 />
               </div>
 
-              {/* Email */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                   Email *
@@ -357,7 +407,6 @@ const Users = () => {
                 />
               </div>
 
-              {/* Password */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                   Password {editingUser && "(Leave empty to keep unchanged)"}
@@ -377,21 +426,32 @@ const Users = () => {
                 </div>
               </div>
 
-              {/* Role ID & Status */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
-                    Role ID
+                    Role *
                   </label>
-                  <input
-                    type="number"
-                    value={formData.roleId}
+                  <select
+                    required
+                    value={String(formData.role_id)}
                     onChange={(e) =>
-                      setFormData({ ...formData, roleId: e.target.value })
+                      setFormData({ ...formData, role_id: e.target.value })
                     }
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
-                    placeholder="e.g. 1"
-                  />
+                  >
+                    <option value="" disabled>
+                      Select Role
+                    </option>
+                    {roles.map((item) => {
+                      const rId = getRoleIdFromItem(item);
+                      const rName = getRoleNameFromItem(item);
+                      return (
+                        <option key={rId || Math.random()} value={rId}>
+                          {rName}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
 
                 <div>
@@ -411,7 +471,6 @@ const Users = () => {
                 </div>
               </div>
 
-              {/* Modal Actions */}
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"

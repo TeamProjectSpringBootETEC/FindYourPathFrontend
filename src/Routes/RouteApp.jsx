@@ -6,6 +6,7 @@ import Home from "../pages/Home";
 import CategoryJob from "@/components/Dashboards/contants/CategoryJob";
 import Company from "@/components/Dashboards/contants/Company";
 import Users from "@/components/Dashboards/contants/Users";
+import Jobs from "@/components/Dashboards/contants/Jobs";
 
 // Layout for Public Pages (with Navbar)
 const PublicLayout = () => {
@@ -51,7 +52,7 @@ function RouteApp() {
         <Route path="users" element={<Users/>} />
         <Route path="companies" element={<Company/>} />
         <Route path="universities" element={<h1 className="text-2xl font-bold">Admin Universities Page</h1>} />
-        <Route path="jobs" element={<h1 className="text-2xl font-bold">Admin Jobs Page</h1>} />
+        <Route path="jobs" element={<Jobs/>} />
         <Route path="categories" element={<CategoryJob/>} />
         <Route path="events" element={<h1 className="text-2xl font-bold">Admin Events</h1>} />
         <Route path="scholarships" element={<h1 className="text-2xl font-bold">Admin Scholarships Page</h1>} />
