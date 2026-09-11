@@ -11,16 +11,9 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getAllJob } from '@/service/JobApi';
+import { getAllJob, getAllJobFields, getAllJobCategories } from '@/service/JobApi';
 
 const ITEMS_PER_PAGE = 6;
-
-const CATEGORY_OPTIONS = [
-  { key: 'frontend', label: 'Frontend Developer' },
-  { key: 'backend', label: 'Backend Developer' },
-  { key: 'uiux', label: 'UI/UX Designer' },
-  { key: 'productManager', label: 'Product Manager' },
-];
 
 const EMPLOYMENT_TYPES = ['Full-time', 'Part-time', 'Remote', 'Internship'];
 
@@ -45,12 +38,7 @@ const getDeadlineInfo = (deadline) => {
 export default function Job() {
   const [searchQuery, setSearchQuery] = useState('');
   const [jobField, setJobField] = useState('All');
-  const [selectedCategories, setSelectedCategories] = useState({
-    frontend: false,
-    backend: false,
-    uiux: false,
-    productManager: false,
-  });
+  const [selectedCategories, setSelectedCategories] = useState({});
   const [employmentType, setEmploymentType] = useState('');
   const [salaryRange, setSalaryRange] = useState(5000);
   const [sortBy, setSortBy] = useState('newest');
@@ -59,12 +47,14 @@ export default function Job() {
   const [appliedFilters, setAppliedFilters] = useState({
     search: '',
     field: 'All',
-    categories: { frontend: false, backend: false, uiux: false, productManager: false },
+    categories: {},
     jobType: '',
     salary: 5000,
   });
 
   const [jobs, setJobs] = useState([]);
+  const [jobFields, setJobFields] = useState([]);
+  const [jobCategories, setJobCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -81,6 +71,19 @@ export default function Job() {
       }
     };
     fetchJobs();
+  }, []);
+
+  useEffect(() => {
+    const fetchFilters = async () => {
+      try {
+        const [fields, categories] = await Promise.all([getAllJobFields(), getAllJobCategories()]);
+        setJobFields(fields);
+        setJobCategories(categories);
+      } catch (error) {
+        console.error("Failed to load filters", error);
+      }
+    };
+    fetchFilters();
   }, []);
 
   const toggleBookmark = (id) => {
@@ -103,19 +106,32 @@ export default function Job() {
   const handleClearAll = () => {
     setSearchQuery('');
     setJobField('All');
-    setSelectedCategories({ frontend: false, backend: false, uiux: false, productManager: false });
+    setSelectedCategories({});
     setEmploymentType('');
     setSalaryRange(5000);
     setSortBy('newest');
     setAppliedFilters({
       search: '',
       field: 'All',
-      categories: { frontend: false, backend: false, uiux: false, productManager: false },
+      categories: {},
       jobType: '',
       salary: 5000,
     });
     setCurrentPage(1);
   };
+
+  const categoryFieldMap = useMemo(() => {
+    const map = {};
+    jobCategories.forEach((cat) => {
+      map[cat.id] = cat.fieldName;
+    });
+    return map;
+  }, [jobCategories]);
+
+  const visibleCategories = useMemo(() => {
+    if (jobField === 'All') return jobCategories;
+    return jobCategories.filter((cat) => cat.fieldName === jobField);
+  }, [jobCategories, jobField]);
 
   const filteredJobs = useMemo(() => {
     let result = [...jobs].filter((job) => !getDeadlineInfo(job.deadline).expired);
@@ -131,17 +147,19 @@ export default function Job() {
       );
     }
 
-    // Field filter
+    // Field filter (based on the category's job field)
     if (appliedFilters.field !== 'All') {
-      result = result.filter((job) => job.field === appliedFilters.field);
+      result = result.filter(
+        (job) => categoryFieldMap[job.jobCategoryId] === appliedFilters.field
+      );
     }
 
     // Category filter
     const activeCategories = Object.entries(appliedFilters.categories)
       .filter(([, v]) => v)
-      .map(([k]) => k);
+      .map(([k]) => Number(k));
     if (activeCategories.length > 0) {
-      result = result.filter((job) => activeCategories.includes(job.jobCategoryName));
+      result = result.filter((job) => activeCategories.includes(job.jobCategoryId));
     }
 
     // Employment type filter
@@ -173,7 +191,7 @@ export default function Job() {
     }
 
     return result;
-  }, [jobs, appliedFilters, sortBy]);
+  }, [jobs, appliedFilters, sortBy, categoryFieldMap]);
 
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / ITEMS_PER_PAGE));
   const paginatedJobs = filteredJobs.slice(
@@ -278,9 +296,11 @@ export default function Job() {
                   className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-800 focus:outline-none focus:border-blue-500"
                 >
                   <option value="All">All Fields</option>
-                  <option value="IT & Software">IT & Software</option>
-                  <option value="Design">Design</option>
-                  <option value="Marketing">Marketing</option>
+                  {jobFields.map((field) => (
+                    <option key={field.id} value={field.name}>
+                      {field.name}
+                    </option>
+                  ))}
                 </select>
                 <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-3.5 pointer-events-none" />
               </div>
@@ -290,20 +310,20 @@ export default function Job() {
             <div className="space-y-3">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Job Category</label>
               <div className="space-y-2.5 text-sm">
-                {CATEGORY_OPTIONS.map((cat) => (
-                  <label key={cat.key} className="flex items-center gap-3 cursor-pointer group">
+                {visibleCategories.map((cat) => (
+                  <label key={cat.id} className="flex items-center gap-3 cursor-pointer group">
                     <input
                       type="checkbox"
-                      checked={selectedCategories[cat.key]}
+                      checked={!!selectedCategories[cat.id]}
                       onChange={() =>
                         setSelectedCategories({
                           ...selectedCategories,
-                          [cat.key]: !selectedCategories[cat.key],
+                          [cat.id]: !selectedCategories[cat.id],
                         })
                       }
                       className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="text-gray-700 group-hover:text-gray-900">{cat.label}</span>
+                    <span className="text-gray-700 group-hover:text-gray-900">{cat.name}</span>
                   </label>
                 ))}
               </div>
