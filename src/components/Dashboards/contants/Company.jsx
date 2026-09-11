@@ -14,15 +14,19 @@ import {
   User,
   Loader2,
   RefreshCw,
-  Loader2Icon,
 } from "lucide-react";
 
 const API_BASE_URL = "http://localhost:8089/api/companies";
+
+// CLOUDINARY CONFIGURATION
+const CLOUDINARY_CLOUD_NAME = "gazcwplt"; 
+const CLOUDINARY_UPLOAD_PRESET = "my_react_preset"; // Unsigned preset configured in Cloudinary
 
 function Company() {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -55,13 +59,35 @@ function Company() {
     fetchCompanies();
   }, []);
 
-  // Upload Logo Helper
-  const uploadCompanyLogo = async (companyId, file) => {
-    const logoFormData = new FormData();
-    logoFormData.append("file", file);
-    await axios.post(`${API_BASE_URL}/${companyId}/logo`, logoFormData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  // Cleanup object URLs to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (logoPreview && logoPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(logoPreview);
+      }
+    };
+  }, [logoPreview]);
+
+  // Upload Logo Helper to Cloudinary (Unsigned Strategy)
+  const uploadToCloudinary = async (file) => {
+    const cloudinaryData = new FormData();
+    cloudinaryData.append("file", file);
+    cloudinaryData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
+    try {
+      setUploadingImage(true);
+      // Use a clean axios instance to avoid sending application auth headers to Cloudinary
+      const res = await axios.create().post(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        cloudinaryData
+      );
+      return res.data.secure_url;
+    } catch (err) {
+      console.error("Cloudinary Upload Error Details:", err.response?.data || err.message);
+      throw new Error(err.response?.data?.error?.message || "Cloudinary upload failed.");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   // 2. CREATE & UPDATE
@@ -71,7 +97,14 @@ function Company() {
 
     try {
       setSubmitting(true);
-      let companyId = editingCompany?.id;
+      
+      // Keep existing URL if editing, or set to null if blob preview is active without submission
+      let finalLogoUrl = logoPreview && !logoPreview.startsWith("blob:") ? logoPreview : null;
+
+      // Upload new file to Cloudinary if selected
+      if (logoFile) {
+        finalLogoUrl = await uploadToCloudinary(logoFile);
+      }
 
       const payload = {
         companyName: formData.companyName,
@@ -79,31 +112,26 @@ function Company() {
         location: formData.location,
         website: formData.website,
         userId: formData.userId ? Number(formData.userId) : null,
+        logo: finalLogoUrl,
       };
 
       if (editingCompany) {
         await axios.put(`${API_BASE_URL}/${editingCompany.id}`, payload);
       } else {
-        const response = await axios.post(API_BASE_URL, payload);
-        const createdItem = response.data.data || response.data;
-        companyId = createdItem.id;
-      }
-
-      if (logoFile && companyId) {
-        await uploadCompanyLogo(companyId, logoFile);
+        await axios.post(API_BASE_URL, payload);
       }
 
       closeModal();
       fetchCompanies();
     } catch (err) {
       console.error("Failed to save company:", err);
-      alert(err.response?.data?.message || "Failed to save company.");
+      alert(err.message || "Failed to save company.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // 3. DELETE
+  // 3. DELETE COMPANY
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this company?")) return;
 
@@ -115,13 +143,13 @@ function Company() {
     }
   };
 
-  // 4. DELETE LOGO
-  const handleDeleteLogo = async (id, e) => {
+  // 4. REMOVE LOGO FROM RECORD
+  const handleDeleteLogo = async (companyId, e) => {
     e.stopPropagation();
     if (!window.confirm("Remove company logo?")) return;
 
     try {
-      await axios.delete(`${API_BASE_URL}/${id}/logo`);
+      await axios.put(`${API_BASE_URL}/${companyId}`, { logo: null });
       fetchCompanies();
     } catch (err) {
       console.error("Failed to delete logo:", err);
@@ -176,7 +204,6 @@ function Company() {
     setLogoPreview(null);
   };
 
-  // Search Filter
   const filteredCompanies = companies.filter((c) => {
     const name = c.companyName || c.company_name || "";
     const loc = c.location || "";
@@ -187,7 +214,6 @@ function Company() {
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-10 font-sans text-slate-800">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Modern Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
@@ -198,13 +224,12 @@ function Company() {
                 Company Directory
               </h1>
               <p className="text-xs font-medium text-slate-500">
-                Manage registered companies, user bindings, and brand logos
+                Manage registered companies and Cloudinary logos
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Search Input */}
             <div className="relative w-full sm:w-64">
               <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -216,13 +241,13 @@ function Company() {
               />
             </div>
 
-            {/* <button
-              onClick={fetchCategories}
+            <button
+              onClick={fetchCompanies}
               className="p-2.5 text-slate-500 hover:text-indigo-600 border border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100 transition"
               title="Refresh Data"
             >
               <RefreshCw size={18} />
-            </button> */}
+            </button>
 
             <button
               onClick={() => openModal()}
@@ -234,7 +259,6 @@ function Company() {
           </div>
         </div>
 
-        {/* Modern Table Container */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -271,7 +295,6 @@ function Company() {
                       key={company.id}
                       className="hover:bg-slate-50/60 transition-colors group"
                     >
-                      {/* Name & Logo */}
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3.5">
                           <div className="relative group/logo w-11 h-11 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center overflow-hidden shrink-0">
@@ -303,7 +326,6 @@ function Company() {
                         </div>
                       </td>
 
-                      {/* Location */}
                       <td className="py-4 px-6 text-slate-600">
                         {company.location ? (
                           <div className="flex items-center gap-1.5 text-xs font-medium">
@@ -315,7 +337,6 @@ function Company() {
                         )}
                       </td>
 
-                      {/* Website */}
                       <td className="py-4 px-6">
                         {company.website ? (
                           <a
@@ -333,7 +354,6 @@ function Company() {
                         )}
                       </td>
 
-                      {/* User ID Badge */}
                       <td className="py-4 px-6">
                         {userId ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 border border-slate-200 text-slate-600 rounded-md text-xs font-mono font-medium">
@@ -345,7 +365,6 @@ function Company() {
                         )}
                       </td>
 
-                      {/* Actions */}
                       <td className="py-4 px-6 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
@@ -373,11 +392,9 @@ function Company() {
         </div>
       </div>
 
-      {/* Modern Dialog Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-            {/* Modal Header */}
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100">
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
               <h2 className="text-lg font-bold text-slate-900">
                 {editingCompany ? "Edit Company Details" : "Add New Company"}
@@ -390,9 +407,7 @@ function Company() {
               </button>
             </div>
 
-            {/* Modal Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {/* Logo Drag/Drop Area */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
                   Company Logo
@@ -420,12 +435,11 @@ function Company() {
                     htmlFor="logo-file-input"
                     className="cursor-pointer px-4 py-2 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 transition"
                   >
-                    Upload Image
+                    {logoFile ? logoFile.name : "Upload Image"}
                   </label>
                 </div>
               </div>
 
-              {/* Company Name */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                   Company Name *
@@ -443,7 +457,6 @@ function Company() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {/* Location */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                     Location
@@ -459,7 +472,6 @@ function Company() {
                   />
                 </div>
 
-                {/* User ID */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                     User ID
@@ -476,7 +488,6 @@ function Company() {
                 </div>
               </div>
 
-              {/* Website */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                   Website URL
@@ -492,7 +503,6 @@ function Company() {
                 />
               </div>
 
-              {/* Description */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                   Description
@@ -508,7 +518,6 @@ function Company() {
                 />
               </div>
 
-              {/* Form Actions */}
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
@@ -519,11 +528,11 @@ function Company() {
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || uploadingImage}
                   className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 transition active:scale-[0.98] disabled:opacity-50"
                 >
-                  {submitting && <Loader2Icon className="w-4 h-4 animate-spin" />}
-                  {editingCompany ? "Update Company" : "Save Company"}
+                  {(submitting || uploadingImage) && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {uploadingImage ? "Uploading Logo..." : editingCompany ? "Update Company" : "Save Company"}
                 </button>
               </div>
             </form>
