@@ -4,6 +4,10 @@ import Navbar from "../components/Navbar";
 import Sidebar from "@/components/Dashboards/header/Sidebar";
 import Home from "../pages/Home";
 import CategoryJob from "@/components/Dashboards/contants/CategoryJob";
+import Job from "@/pages/Job";
+import JobDetail from "@/pages/detail/JobDetail";
+import Scholarships from "@/pages/Scholarships";
+import ScholarshipDetail from "@/pages/detail/ScholarshipDetail";
 
 // Layout for Public Pages (with Navbar)
 const PublicLayout = () => {
@@ -35,8 +39,10 @@ function RouteApp() {
       {/* Public Pages -> Shows Navbar */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/job" element={<h1 className="p-4 text-2xl font-bold">Job Page</h1>} />
-        <Route path="/scholarships" element={<h1 className="p-4 text-2xl font-bold">Scholarships Page</h1>} />
+        <Route path="/job" element={<Job/>} />
+        <Route path="/detail/:id" element={<JobDetail />} />
+        <Route path="/scholarships" element={<Scholarships />} />
+        <Route path="/scholarship/:id" element={<ScholarshipDetail />} />
         <Route path="/events" element={<h1 className="p-4 text-2xl font-bold">Events Page</h1>} />
         <Route path="/companies" element={<h1 className="p-4 text-2xl font-bold">Companies Page</h1>} />
         <Route path="/universities" element={<h1 className="p-4 text-2xl font-bold">Universities Page</h1>} />

@@ -10,7 +10,6 @@ function Navbar() {
   const navLinks = [
     { name: "Home", path: "/" },
     { name: "Jobs", path: "/job" },
-    { name: "Scholarships", path: "/scholarships" },
     { name: "Events", path: "/events" },
     { name: "Companies", path: "/companies" },
     { name: "Universities", path: "/universities" },
