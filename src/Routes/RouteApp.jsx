@@ -4,12 +4,18 @@ import Navbar from "../components/Navbar";
 import Sidebar from "@/components/Dashboards/header/Sidebar";
 import Home from "../pages/Home";
 import CategoryJob from "@/components/Dashboards/contants/CategoryJob";
+<<<<<<< HEAD
 import Job from "@/pages/Job";
 import JobDetail from "@/pages/detail/JobDetail";
 import Events from "@/pages/Events";
 import EventDetail from "@/pages/detail/EventDetail";
 import Register from "@/pages/Register";
 import Login from "@/pages/Login";
+=======
+import Company from "@/components/Dashboards/contants/Company";
+import Users from "@/components/Dashboards/contants/Users";
+import Jobs from "@/components/Dashboards/contants/Jobs";
+>>>>>>> dashboard
 
 // Layout for Public Pages (with Navbar)
 const PublicLayout = () => {
@@ -57,10 +63,10 @@ function RouteApp() {
       {/* Dashboard Pages -> Shows Sidebar (No Navbar) */}
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<h1 className="text-2xl font-bold">Overview Dashboard</h1>} />
-        <Route path="users" element={<h1 className="text-2xl font-bold">User Directory Page</h1>} />
-        <Route path="companies" element={<h1 className="text-2xl font-bold">Admin Companies Page</h1>} />
+        <Route path="users" element={<Users/>} />
+        <Route path="companies" element={<Company/>} />
         <Route path="universities" element={<h1 className="text-2xl font-bold">Admin Universities Page</h1>} />
-        <Route path="jobs" element={<h1 className="text-2xl font-bold">Admin Jobs Page</h1>} />
+        <Route path="jobs" element={<Jobs/>} />
         <Route path="categories" element={<CategoryJob/>} />
         <Route path="events" element={<h1 className="text-2xl font-bold">Admin Events</h1>} />
         <Route path="scholarships" element={<h1 className="text-2xl font-bold">Admin Scholarships Page</h1>} />

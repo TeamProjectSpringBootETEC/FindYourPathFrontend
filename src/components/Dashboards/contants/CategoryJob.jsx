@@ -12,9 +12,11 @@ import {
 } from "lucide-react";
 
 const API_BASE_URL = "http://localhost:8089/api/job-categories";
+const JOBS_API_URL = "http://localhost:8089/api/jobs";
 
 function CategoryJob() {
   const [categories, setCategories] = useState([]);
+  const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -23,30 +25,42 @@ function CategoryJob() {
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  // Track item being edited (null = mode Create, non-null = mode Edit)
   const [editingCategory, setEditingCategory] = useState(null);
 
-  // Form State
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    jobs:""
   });
 
-  // 1. READ: Fetch Categories from API
-  const fetchCategories = async () => {
+  // 1. READ: Fetch Categories & Jobs ចេញពី Backend
+  const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(API_BASE_URL);
-      const data = Array.isArray(response.data)
-        ? response.data
-        : response.data.data || [];
-      setCategories(data);
+
+      const [catRes, jobRes] = await Promise.all([
+        axios.get(API_BASE_URL),
+        axios.get(JOBS_API_URL).catch(() => ({ data: [] })),
+      ]);
+
+      const catData = Array.isArray(catRes.data)
+        ? catRes.data
+        : catRes.data.data || [];
+
+      const jobData = Array.isArray(jobRes.data)
+        ? jobRes.data
+        : jobRes.data.data || [];
+
+      // Console.log មើល Structure ទិន្នន័យ Backend ក្នុង F12
+      console.log("Categories Data:", catData);
+      console.log("Jobs Data:", jobData);
+
+      setCategories(catData);
+      setJobs(jobData);
     } catch (err) {
-      console.error("Failed to fetch job categories:", err);
+      console.error("Failed to fetch data:", err);
       setError(
-        "Failed to load job categories. Make sure your API is running at http://localhost:8089."
+        "Failed to load data. Make sure your API is running at http://localhost:8089."
       );
     } finally {
       setLoading(false);
@@ -54,17 +68,40 @@ function CategoryJob() {
   };
 
   useEffect(() => {
-    fetchCategories();
+    fetchData();
   }, []);
 
-  // Open Modal for Creating
+  // Safe extraction of Category ID from Job Object (ដកស្រង់ Category ID ពី Job ឲ្យគ្រប់ទម្រង់)
+  const getJobCategoryId = (job) => {
+    if (!job) return null;
+
+    const id =
+      job.category_id ??
+      job.categoryId ??
+      job.job_category_id ??
+      job.jobCategoryId ??
+      job.category?.id ??
+      job.jobCategory?.id ??
+      job.jobCategories?.id;
+
+    return id !== undefined && id !== null ? String(id) : null;
+  };
+
+  // មុខងារគណនាចំនួន Job តាម Category ID ដោយប្រើ String Comparison
+  const getJobCountByCategoryId = (categoryId) => {
+    if (!categoryId) return 0;
+    return jobs.filter((job) => {
+      const jobCatId = getJobCategoryId(job);
+      return jobCatId === String(categoryId);
+    }).length;
+  };
+
   const handleOpenCreateModal = () => {
     setEditingCategory(null);
     setFormData({ name: "", description: "" });
     setIsModalOpen(true);
   };
 
-  // Open Modal for Editing
   const handleOpenEditModal = (category) => {
     setEditingCategory(category);
     setFormData({
@@ -74,7 +111,6 @@ function CategoryJob() {
     setIsModalOpen(true);
   };
 
-  // 2. CREATE & UPDATE: Submit Handler for Form
   const handleSubmitForm = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
@@ -83,7 +119,6 @@ function CategoryJob() {
       setSubmitting(true);
 
       if (editingCategory) {
-        // --- UPDATE (PUT Request) ---
         const response = await axios.put(
           `${API_BASE_URL}/${editingCategory.id}`,
           {
@@ -97,14 +132,12 @@ function CategoryJob() {
           ...formData,
         };
 
-        // Update Category នៅក្នុង State
         setCategories((prev) =>
           prev.map((cat) =>
             cat.id === editingCategory.id ? { ...cat, ...updatedItem } : cat
           )
         );
       } else {
-        // --- CREATE (POST Request) ---
         const response = await axios.post(API_BASE_URL, {
           name: formData.name,
           description: formData.description,
@@ -114,10 +147,10 @@ function CategoryJob() {
         setCategories((prev) => [createdItem, ...prev]);
       }
 
-      // Close Modal and Reset
       setIsModalOpen(false);
       setEditingCategory(null);
       setFormData({ name: "", description: "" });
+      fetchData(); // Refresh Data ក្រោយពេលបង្កើត ឬកែប្រែ
     } catch (err) {
       console.error("Failed to save category:", err);
       alert("Failed to save category. Please check server logs.");
@@ -126,7 +159,6 @@ function CategoryJob() {
     }
   };
 
-  // 3. DELETE: Delete Category API Call
   const handleDeleteCategory = async (id) => {
     if (!window.confirm("Are you sure you want to delete this category?")) {
       return;
@@ -135,8 +167,6 @@ function CategoryJob() {
     try {
       setDeletingId(id);
       await axios.delete(`${API_BASE_URL}/${id}`);
-
-      // លុប Item ចេញពី State
       setCategories((prev) => prev.filter((cat) => cat.id !== id));
     } catch (err) {
       console.error("Failed to delete category:", err);
@@ -146,7 +176,6 @@ function CategoryJob() {
     }
   };
 
-  // Filter Categories by Search Input
   const filteredCategories = categories.filter((cat) => {
     const query = searchQuery.toLowerCase();
     const nameMatch = cat.name && cat.name.toLowerCase().includes(query);
@@ -169,7 +198,6 @@ function CategoryJob() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Search Box */}
           <div className="relative w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
             <input
@@ -181,16 +209,14 @@ function CategoryJob() {
             />
           </div>
 
-          {/* Refresh Button */}
           <button
-            onClick={fetchCategories}
+            onClick={fetchData}
             className="p-2 text-slate-500 hover:text-indigo-600 border border-slate-200 rounded-lg bg-slate-50 hover:bg-slate-100 transition"
             title="Refresh Data"
           >
             <RefreshCw size={18} />
           </button>
 
-          {/* Add Button */}
           <button
             onClick={handleOpenCreateModal}
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm px-4 py-2 rounded-lg shadow-sm transition active:scale-[0.98]"
@@ -203,7 +229,6 @@ function CategoryJob() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto p-8 space-y-6">
-        {/* Metric Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
@@ -226,7 +251,7 @@ function CategoryJob() {
             <div className="p-8 text-center text-rose-500">
               <p className="font-semibold">{error}</p>
               <button
-                onClick={fetchCategories}
+                onClick={fetchData}
                 className="mt-3 px-4 py-1.5 bg-rose-50 text-rose-600 rounded-md text-xs font-medium hover:bg-rose-100 transition"
               >
                 Retry API
@@ -239,58 +264,70 @@ function CategoryJob() {
                   <th className="py-3.5 px-6">ID</th>
                   <th className="py-3.5 px-6">Category Name</th>
                   <th className="py-3.5 px-6">Description</th>
-                  <th className="py-3.5 px-6">Job</th>
+                  <th className="py-3.5 px-6">Jobs Count</th>
                   <th className="py-3.5 px-6 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {filteredCategories.map((item, index) => (
-                  <tr
-                    key={item.id || index}
-                    className="hover:bg-slate-50/60 transition"
-                  >
-                    <td className="py-4 px-6 font-mono text-xs text-slate-500">
-                      #{item.id}
-                    </td>
-                    <td className="py-4 px-6 font-semibold text-slate-900">
-                      {item.name || "Unnamed Category"}
-                    </td>
-                    <td className="py-4 px-6 text-slate-600 max-w-md truncate">
-                      {item.description || "N/A"}
-                    </td>
-                    <td className="py-4 px-6 font-semibold text-slate-900">2</td>
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Edit Button */}
-                        <button
-                          onClick={() => handleOpenEditModal(item)}
-                          className="text-slate-400 hover:text-indigo-600 p-1.5 rounded-lg hover:bg-slate-100 transition"
-                          title="Edit Category"
-                        >
-                          <Edit size={16} />
-                        </button>
+                {filteredCategories.map((item, index) => {
+                  // ប្រសិនបើ Category មាន nested array 'jobs' ស្រាប់ ប្រើវា បើគ្មានប្រើ helper function រាប់
+                  const jobCount = Array.isArray(item.jobs)
+                    ? item.jobs.length
+                    : getJobCountByCategoryId(item.id);
 
-                        {/* Delete Button */}
-                        <button
-                          onClick={() => handleDeleteCategory(item.id)}
-                          disabled={deletingId === item.id}
-                          className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-50"
-                          title="Delete Category"
-                        >
-                          {deletingId === item.id ? (
-                            <Loader2 size={16} className="animate-spin text-rose-600" />
-                          ) : (
-                            <Trash2 size={16} />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                  return (
+                    <tr
+                      key={item.id || index}
+                      className="hover:bg-slate-50/60 transition"
+                    >
+                      <td className="py-4 px-6 font-mono text-xs text-slate-500">
+                        #{item.id}
+                      </td>
+                      <td className="py-4 px-6 font-semibold text-slate-900">
+                        {item.name || "Unnamed Category"}
+                      </td>
+                      <td className="py-4 px-6 text-slate-600 max-w-md truncate">
+                        {item.description || "N/A"}
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700">
+                          {jobCount} Jobs
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleOpenEditModal(item)}
+                            className="text-slate-400 hover:text-indigo-600 p-1.5 rounded-lg hover:bg-slate-100 transition"
+                            title="Edit Category"
+                          >
+                            <Edit size={16} />
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteCategory(item.id)}
+                            disabled={deletingId === item.id}
+                            className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-100 transition disabled:opacity-50"
+                            title="Delete Category"
+                          >
+                            {deletingId === item.id ? (
+                              <Loader2
+                                size={16}
+                                className="animate-spin text-rose-600"
+                              />
+                            ) : (
+                              <Trash2 size={16} />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {filteredCategories.length === 0 && (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={5}
                       className="py-12 text-center text-slate-400"
                     >
                       No job categories found matching your query.
@@ -307,7 +344,6 @@ function CategoryJob() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-            {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h2 className="text-lg font-bold text-slate-800">
                 {editingCategory ? "Edit Job Category" : "Add Job Category"}
@@ -320,9 +356,7 @@ function CategoryJob() {
               </button>
             </div>
 
-            {/* Modal Body */}
             <form onSubmit={handleSubmitForm} className="p-6 space-y-4">
-              {/* Name Input */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                   Category Name
@@ -339,7 +373,6 @@ function CategoryJob() {
                 />
               </div>
 
-              {/* Description Input */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                   Description
@@ -355,7 +388,6 @@ function CategoryJob() {
                 />
               </div>
 
-              {/* Form Actions */}
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
@@ -369,7 +401,9 @@ function CategoryJob() {
                   disabled={submitting}
                   className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition shadow-sm disabled:opacity-50"
                 >
-                  {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {submitting && (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  )}
                   {editingCategory ? "Update Category" : "Save Category"}
                 </button>
               </div>
