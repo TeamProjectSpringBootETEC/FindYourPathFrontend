@@ -13,6 +13,8 @@ import {
   Settings,
   Bell,
   CalendarDays,
+  BarChart3,
+  X,
 } from "lucide-react";
 
 const mainNavItems = [
@@ -25,6 +27,7 @@ const mainNavItems = [
   { name: "Events", path: "/dashboard/events", icon: CalendarDays },
   { name: "Scholarships", path: "/dashboard/scholarships", icon: Award },
   { name: "Applications", path: "/dashboard/applications", icon: FileText },
+  { name: "Report & Analytics", path: "/dashboard/reports", icon: BarChart3 },
 ];
 
 const footerNavItems = [
@@ -32,12 +35,13 @@ const footerNavItems = [
   { name: "Notifications", path: "/dashboard/notifications", icon: Bell },
 ];
 
-const SidebarNavLink = ({ item }) => {
+const SidebarNavLink = ({ item, onClose }) => {
   const Icon = item.icon;
   return (
     <NavLink
       to={item.path}
       end={item.end}
+      onClick={onClose}
       className={({ isActive }) =>
         `w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
           isActive
@@ -59,12 +63,11 @@ const SidebarNavLink = ({ item }) => {
   );
 };
 
-const Sidebar = () => {
-  return (
-    <aside className="w-64 h-screen sticky top-0 bg-[#F8FAFC] border-r border-slate-200 flex flex-col justify-between p-4 shrink-0 overflow-y-auto">
-      <div className="space-y-4">
-        {/* Top Header */}
-        <header className="flex items-center gap-2.5 px-3 py-2">
+const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
+  const sidebarContent = (
+    <>
+      <div className="flex items-center justify-between px-3 py-2">
+        <div className="flex items-center gap-2.5">
           <div className="bg-indigo-600 p-2.5 rounded-xl text-white shadow-md shadow-indigo-200 shrink-0">
             <Briefcase size={22} />
           </div>
@@ -76,23 +79,54 @@ const Sidebar = () => {
               Enterprise Suite
             </p>
           </div>
-        </header>
-
-        {/* Main Navigation */}
-        <nav className="space-y-1">
-          {mainNavItems.map((item) => (
-            <SidebarNavLink key={item.path} item={item} />
-          ))}
-        </nav>
+        </div>
+        <button
+          onClick={onClose}
+          className="lg:hidden p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition"
+          aria-label="Close menu"
+        >
+          <X size={20} />
+        </button>
       </div>
 
-      {/* Bottom Navigation */}
+      <nav className="space-y-1 mt-4">
+        {mainNavItems.map((item) => (
+          <SidebarNavLink key={item.path} item={item} onClose={onClose} />
+        ))}
+      </nav>
+
       <footer className="pt-3 border-t border-slate-200 space-y-1 mt-auto">
         {footerNavItems.map((item) => (
-          <SidebarNavLink key={item.path} item={item} />
+          <SidebarNavLink key={item.path} item={item} onClose={onClose} />
         ))}
       </footer>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile overlay backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Desktop: static sidebar */}
+      <aside className="hidden lg:flex w-64 h-screen sticky top-0 bg-[#F8FAFC] border-r border-slate-200 flex-col p-4 shrink-0 overflow-y-auto">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile/tablet: slide-in sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 max-w-[80vw] bg-[#F8FAFC] border-r border-slate-200 flex flex-col p-4 overflow-y-auto transition-transform duration-300 lg:hidden ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {sidebarContent}
+      </aside>
+    </>
   );
 };
 
