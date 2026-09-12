@@ -8,6 +8,8 @@ import Job from "@/pages/Job";
 import JobDetail from "@/pages/detail/JobDetail";
 import Events from "@/pages/Events";
 import EventDetail from "@/pages/detail/EventDetail";
+import ApplyJob from "@/pages/ApplyJob";
+import ApplySuccess from "@/pages/ApplySuccess";
 import Register from "@/pages/Register";
 import Login from "@/pages/Login";
 import Company from "@/components/Dashboards/contants/Company";
@@ -47,6 +49,8 @@ function RouteApp() {
         <Route path="/" element={<Home />} />
         <Route path="/job" element={<Job/>} />
         <Route path="/detail/:id" element={<JobDetail />} />
+        <Route path="/apply/:id" element={<ApplyJob />} />
+        <Route path="/apply-success" element={<ApplySuccess />} />
         <Route path="/events" element={<Events/>} />
         <Route path="/event/:id" element={<EventDetail />} />
         <Route path="/companies" element={<h1 className="p-4 text-2xl font-bold">Companies Page</h1>} />

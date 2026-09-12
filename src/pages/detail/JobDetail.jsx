@@ -224,7 +224,10 @@ export default function JobDetail() {
             
             {/* Top Action Buttons Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-3">
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors shadow-sm shadow-blue-200">
+              <button
+                onClick={() => navigate(`/apply/${job.id}`)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors shadow-sm shadow-blue-200"
+              >
                 Apply Now
               </button>
               <button
