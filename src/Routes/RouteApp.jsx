@@ -4,18 +4,15 @@ import Navbar from "../components/Navbar";
 import Sidebar from "@/components/Dashboards/header/Sidebar";
 import Home from "../pages/Home";
 import CategoryJob from "@/components/Dashboards/contants/CategoryJob";
-<<<<<<< HEAD
 import Job from "@/pages/Job";
 import JobDetail from "@/pages/detail/JobDetail";
 import Events from "@/pages/Events";
 import EventDetail from "@/pages/detail/EventDetail";
 import Register from "@/pages/Register";
 import Login from "@/pages/Login";
-=======
 import Company from "@/components/Dashboards/contants/Company";
 import Users from "@/components/Dashboards/contants/Users";
 import Jobs from "@/components/Dashboards/contants/Jobs";
->>>>>>> dashboard
 
 // Layout for Public Pages (with Navbar)
 const PublicLayout = () => {

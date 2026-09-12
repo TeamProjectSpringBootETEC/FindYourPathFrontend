@@ -8,7 +8,7 @@ Update this file when conventions change; keep the pointer files short.
 ## Project overview
 
 FindYourPath — a recruitment/job platform REST API.
-
+<!--  -->
 - **Language / runtime:** Java 21
 - **Framework:** Spring Boot 4.0.8-SNAPSHOT (spring-boot-starter-parent)
 - **Persistence:** Spring Data JPA + MySQL (`mysql-connector-j`)

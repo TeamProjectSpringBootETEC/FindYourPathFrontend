@@ -55,6 +55,8 @@ function Company() {
       setLoading(true);
       const response = await axios.get(API_BASE_URL);
       const data = response.data.data || response.data;
+
+      console.log(response.data)
       setCompanies(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch companies:", err);

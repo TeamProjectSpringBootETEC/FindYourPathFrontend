@@ -13,10 +13,12 @@ import {
 
 const API_BASE_URL = "http://localhost:8089/api/job-categories";
 const JOBS_API_URL = "http://localhost:8089/api/jobs";
+const JOB_FIELDS_API_URL = "http://localhost:8089/api/job-fields";
 
 function CategoryJob() {
   const [categories, setCategories] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -30,6 +32,7 @@ function CategoryJob() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    field_id: "",
   });
 
   // 1. READ: Fetch Categories & Jobs ចេញពី Backend
@@ -38,9 +41,10 @@ function CategoryJob() {
       setLoading(true);
       setError(null);
 
-      const [catRes, jobRes] = await Promise.all([
+      const [catRes, jobRes, fieldsRes] = await Promise.all([
         axios.get(API_BASE_URL),
         axios.get(JOBS_API_URL).catch(() => ({ data: [] })),
+        axios.get(JOB_FIELDS_API_URL).catch(() => ({ data: [] })),
       ]);
 
       const catData = Array.isArray(catRes.data)
@@ -51,12 +55,17 @@ function CategoryJob() {
         ? jobRes.data
         : jobRes.data.data || [];
 
+      const fieldData = Array.isArray(fieldsRes.data)
+        ? fieldsRes.data
+        : fieldsRes.data.data || [];
+
       // Console.log មើល Structure ទិន្នន័យ Backend ក្នុង F12
       console.log("Categories Data:", catData);
       console.log("Jobs Data:", jobData);
 
       setCategories(catData);
       setJobs(jobData);
+      setFields(fieldData);
     } catch (err) {
       console.error("Failed to fetch data:", err);
       setError(
@@ -98,7 +107,11 @@ function CategoryJob() {
 
   const handleOpenCreateModal = () => {
     setEditingCategory(null);
-    setFormData({ name: "", description: "" });
+    setFormData({
+      name: "",
+      description: "",
+      field_id: fields.length > 0 ? String(fields[0].id) : "",
+    });
     setIsModalOpen(true);
   };
 
@@ -107,6 +120,7 @@ function CategoryJob() {
     setFormData({
       name: category.name || "",
       description: category.description || "",
+      field_id: String(category.fieldId ?? category.field_id ?? ""),
     });
     setIsModalOpen(true);
   };
@@ -124,6 +138,7 @@ function CategoryJob() {
           {
             name: formData.name,
             description: formData.description,
+            field_id: formData.field_id ? Number(formData.field_id) : undefined,
           }
         );
 
@@ -141,6 +156,7 @@ function CategoryJob() {
         const response = await axios.post(API_BASE_URL, {
           name: formData.name,
           description: formData.description,
+          field_id: formData.field_id ? Number(formData.field_id) : undefined,
         });
 
         const createdItem = response.data.data || response.data;
@@ -149,11 +165,13 @@ function CategoryJob() {
 
       setIsModalOpen(false);
       setEditingCategory(null);
-      setFormData({ name: "", description: "" });
+      setFormData({ name: "", description: "", field_id: "" });
       fetchData(); // Refresh Data ក្រោយពេលបង្កើត ឬកែប្រែ
     } catch (err) {
       console.error("Failed to save category:", err);
-      alert("Failed to save category. Please check server logs.");
+      const backendMessage =
+        err.response?.data?.message || "Failed to save category. Please check server logs.";
+      alert(backendMessage);
     } finally {
       setSubmitting(false);
     }
@@ -263,6 +281,7 @@ function CategoryJob() {
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-medium text-xs uppercase tracking-wider">
                   <th className="py-3.5 px-6">ID</th>
                   <th className="py-3.5 px-6">Category Name</th>
+                  <th className="py-3.5 px-6">Job Field</th>
                   <th className="py-3.5 px-6">Description</th>
                   <th className="py-3.5 px-6">Jobs Count</th>
                   <th className="py-3.5 px-6 text-right">Actions</th>
@@ -285,6 +304,11 @@ function CategoryJob() {
                       </td>
                       <td className="py-4 px-6 font-semibold text-slate-900">
                         {item.name || "Unnamed Category"}
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700">
+                          {item.fieldName || item.field_name || "N/A"}
+                        </span>
                       </td>
                       <td className="py-4 px-6 text-slate-600 max-w-md truncate">
                         {item.description || "N/A"}
@@ -327,7 +351,7 @@ function CategoryJob() {
                 {filteredCategories.length === 0 && (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       className="py-12 text-center text-slate-400"
                     >
                       No job categories found matching your query.
@@ -371,6 +395,29 @@ function CategoryJob() {
                   }
                   className="w-full px-3.5 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                  Job Field *
+                </label>
+                <select
+                  required
+                  value={String(formData.field_id)}
+                  onChange={(e) =>
+                    setFormData({ ...formData, field_id: e.target.value })
+                  }
+                  className="w-full px-3.5 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                >
+                  <option value="" disabled>
+                    Select a Job Field
+                  </option>
+                  {fields.map((field) => (
+                    <option key={field.id} value={field.id}>
+                      {field.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>

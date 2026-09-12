@@ -70,7 +70,9 @@ const Users = () => {
     } catch (err) {
       console.error("Failed to fetch roles:", err);
     }
-  };
+    
+    console.log(response.data);
+};
 
   useEffect(() => {
     fetchUsers();
