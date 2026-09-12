@@ -25,6 +25,7 @@ import {
 
 const API_BASE_URL = "http://localhost:8089/api/companies";
 const USERS_API_URL = "http://localhost:8089/api/v1/users";
+const JOBS_API_URL = "http://localhost:8089/api/jobs";
 
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "gazcwplt";
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "my_react_preset";
@@ -32,6 +33,7 @@ const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET |
 function Company() {
   const [companies, setCompanies] = useState([]);
   const [users, setUsers] = useState([]);
+  const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -73,9 +75,20 @@ function Company() {
     }
   };
 
+  const fetchJobs = async () => {
+    try {
+      const response = await axios.get(JOBS_API_URL);
+      const data = response.data.data || response.data;
+      setJobs(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch jobs:", err);
+    }
+  };
+
   useEffect(() => {
     fetchCompanies();
     fetchUsers();
+    fetchJobs();
   }, []);
 
   useEffect(() => {
@@ -253,6 +266,12 @@ function Company() {
     }, {});
   }, [users]);
 
+  // Count jobs whose status is OPEN (ACTIVE)
+  const activeJobsCount = jobs.filter((job) => {
+    const status = String(job.status || "").toUpperCase();
+    return status === "OPEN" || status === "ACTIVE";
+  }).length;
+
   return (
     <div className="min-h-screen bg-[#F8F9FD] text-slate-800 font-sans pb-12">
       <header className="bg-white border-b-2 border-slate-100 px-6 py-3 flex items-center justify-between sticky top-0 z-30">
@@ -313,6 +332,7 @@ function Company() {
               onClick={() => {
                 fetchCompanies();
                 fetchUsers();
+                fetchJobs();
               }}
               className="p-2 text-slate-500 hover:text-indigo-600 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition"
               title="Refresh Data"
@@ -391,7 +411,9 @@ function Company() {
               <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                 Active Jobs
               </p>
-              <p className="text-xl font-bold text-slate-900 mt-0.5">3,105</p>
+              <p className="text-xl font-bold text-slate-900 mt-0.5">
+                {activeJobsCount.toLocaleString()}
+              </p>
             </div>
           </div>
         </div>

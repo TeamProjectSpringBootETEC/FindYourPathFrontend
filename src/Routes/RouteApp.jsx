@@ -7,6 +7,9 @@ import CategoryJob from "@/components/Dashboards/contants/CategoryJob";
 import Company from "@/components/Dashboards/contants/Company";
 import Users from "@/components/Dashboards/contants/Users";
 import Jobs from "@/components/Dashboards/contants/Jobs";
+import Events from "@/components/Dashboards/contants/Events";
+import Scholarships from "@/components/Dashboards/contants/Scholarships";
+import Universities from "@/components/Dashboards/contants/Universities";
 
 // Layout for Public Pages (with Navbar)
 const PublicLayout = () => {
@@ -51,11 +54,11 @@ function RouteApp() {
         <Route index element={<h1 className="text-2xl font-bold">Overview Dashboard</h1>} />
         <Route path="users" element={<Users/>} />
         <Route path="companies" element={<Company/>} />
-        <Route path="universities" element={<h1 className="text-2xl font-bold">Admin Universities Page</h1>} />
+        <Route path="universities" element={<Universities/>} />
         <Route path="jobs" element={<Jobs/>} />
         <Route path="categories" element={<CategoryJob/>} />
-        <Route path="events" element={<h1 className="text-2xl font-bold">Admin Events</h1>} />
-        <Route path="scholarships" element={<h1 className="text-2xl font-bold">Admin Scholarships Page</h1>} />
+        <Route path="events" element={<Events/>} />
+        <Route path="scholarships" element={<Scholarships/>} />
         <Route path="applications" element={<h1 className="text-2xl font-bold">Applications Page</h1>} />
         <Route path="settings" element={<h1 className="text-2xl font-bold">Settings Page</h1>} />
         <Route path="notifications" element={<h1 className="text-2xl font-bold">Notifications Page</h1>} />
