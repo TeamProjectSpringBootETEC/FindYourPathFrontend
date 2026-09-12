@@ -1,17 +1,35 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { loginUser } from '@/service/authApi';
 
 export default function Login() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false,
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(`Signing in with email: ${formData.email}`);
+    setError(null);
+    try {
+      setSubmitting(true);
+      const user = await loginUser({
+        email: formData.email,
+        password: formData.password,
+      });
+      localStorage.setItem('user', JSON.stringify(user));
+      navigate('/');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Invalid email or password.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -32,6 +50,13 @@ export default function Login() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
+          
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+              {error}
+            </div>
+          )}
           
           {/* Email Address Input */}
           <div className="space-y-1.5">
@@ -102,9 +127,10 @@ export default function Login() {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white py-3.5 rounded-xl font-semibold text-sm transition-all shadow-sm shadow-blue-200 flex items-center justify-center gap-2"
+            disabled={submitting}
+            className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white py-3.5 rounded-xl font-semibold text-sm transition-all shadow-sm shadow-blue-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Sign In <ArrowRight className="w-4 h-4" />
+            {submitting ? 'Signing in...' : 'Sign In'} <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 

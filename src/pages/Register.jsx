@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Mail, Lock } from 'lucide-react';
+import { registerUser } from '@/service/authApi';
 
 export default function Register() {
+  const navigate = useNavigate();
   const [accountType, setAccountType] = useState('Candidate');
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -11,17 +16,32 @@ export default function Register() {
     agreeTerms: false,
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
     if (!formData.agreeTerms) {
-      alert('Please agree to the Terms of Service and Privacy Policy.');
+      setError('Please agree to the Terms of Service and Privacy Policy.');
       return;
     }
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match.');
+      setError('Passwords do not match.');
       return;
     }
-    alert(`Account created successfully as ${accountType}!`);
+    try {
+      setSubmitting(true);
+      await registerUser({
+        roleId: accountType === 'Employer' ? 2 : 1,
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        status: 'ACTIVE',
+      });
+      navigate('/login');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -60,6 +80,13 @@ export default function Register() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
+          
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+              {error}
+            </div>
+          )}
           
           {/* Full Name Input */}
           <div className="space-y-1.5">
@@ -147,9 +174,10 @@ export default function Register() {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white py-3.5 rounded-xl font-semibold text-sm transition-all shadow-sm shadow-blue-200"
+            disabled={submitting}
+            className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white py-3.5 rounded-xl font-semibold text-sm transition-all shadow-sm shadow-blue-200 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Create Account
+            {submitting ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
 
