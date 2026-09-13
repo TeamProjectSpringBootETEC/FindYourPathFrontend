@@ -1,29 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Share2, 
-  Bookmark, 
-  BookmarkCheck, 
-  CheckCircle2, 
-  DollarSign, 
-  HeartPulse, 
-  TrendingUp, 
-  Coffee, 
+import {
+  ArrowLeft,
+  Share2,
+  Bookmark,
+  BookmarkCheck,
+  CheckCircle2,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
 } from 'lucide-react';
-import { initialJobs, CATEGORY_LABELS } from '@/data/jobs';
+import { getJobById } from '@/service/JobApi';
+
+const getDeadlineInfo = (deadline) => {
+  if (!deadline) return { text: 'No deadline', expired: false };
+  const target = new Date(`${deadline}T00:00:00`);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+  if (days < 0) return { text: 'Expired', expired: true };
+  if (days === 0) return { text: 'Expires today', expired: false };
+  return { text: `${days} days left`, expired: false };
+};
+
+const formatSalary = (salary) => {
+  const value = Number(salary);
+  return Number.isNaN(value) ? 'Not specified' : `$${value.toLocaleString()}`;
+};
 
 export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const job = initialJobs.find((j) => j.id === Number(id));
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isSaved, setIsSaved] = useState(false);
 
-  const [isSaved, setIsSaved] = useState(job?.isBookmarked ?? false);
+  useEffect(() => {
+    const fetchJob = async () => {
+      try {
+        setLoading(true);
+        const data = await getJobById(id);
+        setJob(data);
+      } catch (err) {
+        setError('Failed to load job details');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJob();
+  }, [id]);
 
-  if (!job) {
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p>Loading job details...</p>
+      </div>
+    );
+  }
+
+  if (error || !job) {
     return (
       <div className="min-h-screen bg-gray-50/50 font-sans text-gray-800 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
@@ -50,16 +86,18 @@ export default function JobDetail() {
     );
   }
 
+  const companyName = job.companyName || 'Unknown Company';
+  const initials = companyName.substring(0, 2).toUpperCase();
   const postedDays = Math.max(
     1,
     Math.round((Date.now() - new Date(job.createdAt).getTime()) / (1000 * 60 * 60 * 24))
   );
-  const initials = job.company.substring(0, 2).toUpperCase();
+  const deadlineInfo = getDeadlineInfo(job.deadline);
 
   return (
     <div className="min-h-screen bg-gray-50/50 font-sans text-gray-800 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         {/* Back Button */}
         <button
           onClick={() => navigate('/job')}
@@ -71,7 +109,7 @@ export default function JobDetail() {
         {/* Top Header Card */}
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm relative">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            
+
             <div className="flex items-start gap-4">
               {/* Company Logo Placeholder */}
               <div className="w-14 h-14 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
@@ -82,7 +120,7 @@ export default function JobDetail() {
                 <h1 className="text-2xl font-bold text-gray-900">{job.title}</h1>
                 <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-gray-600">
                   <span className="text-blue-600 flex items-center gap-1 font-semibold">
-                    {job.company} 
+                    {companyName}
                     <ShieldCheck className="w-4 h-4 text-blue-500 fill-blue-500 text-white" />
                   </span>
                   <span>•</span>
@@ -92,10 +130,16 @@ export default function JobDetail() {
 
                 {/* Pills */}
                 <div className="flex flex-wrap items-center gap-2 pt-2">
-                  <span className="bg-blue-50 text-blue-600 text-xs px-3 py-1 rounded-lg font-medium">{job.type}</span>
-                  <span className="bg-blue-50 text-blue-600 text-xs px-3 py-1 rounded-lg font-medium">{job.field}</span>
-                  <span className="bg-red-50 text-red-500 text-xs px-3 py-1 rounded-lg font-medium">
-                    {job.timeLeft}
+                  <span className="bg-blue-50 text-blue-600 text-xs px-3 py-1 rounded-lg font-medium">{job.jobType}</span>
+                  <span className="bg-blue-50 text-blue-600 text-xs px-3 py-1 rounded-lg font-medium">{job.workplaceType}</span>
+                  <span
+                    className={`text-xs px-3 py-1 rounded-lg font-medium ${
+                      deadlineInfo.expired
+                        ? 'bg-red-50 text-red-500'
+                        : 'bg-green-50 text-green-600'
+                    }`}
+                  >
+                    {deadlineInfo.text}
                   </span>
                 </div>
               </div>
@@ -106,7 +150,7 @@ export default function JobDetail() {
               <button className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:border-gray-300 hover:text-blue-600 transition-colors shadow-sm">
                 <Share2 className="w-4 h-4" />
               </button>
-              <button 
+              <button
                 onClick={() => setIsSaved(!isSaved)}
                 className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:border-gray-300 hover:text-blue-600 transition-colors shadow-sm"
               >
@@ -123,100 +167,67 @@ export default function JobDetail() {
 
         {/* Main Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Left Column: Job Description, Requirements & Benefits */}
           <div className="lg:col-span-2 space-y-8 bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm">
-            
+
             {/* Job Description */}
             <div className="space-y-3">
               <h2 className="text-lg font-bold text-gray-900">Job Description</h2>
               <p className="text-sm text-gray-600 leading-relaxed">
-                We are looking for a skilled and passionate {job.title} to join our growing product team at {job.company}. You will be responsible for building modern, responsive, and highly performant digital solutions. The ideal candidate has a keen eye for detail and a strong technical foundation in {job.tags.join(', ')}.
+                {job.description || `We are looking for a skilled and passionate ${job.title} to join our growing product team at ${companyName}. You will be responsible for building modern, responsive, and highly performant digital solutions.`}
               </p>
             </div>
 
             {/* Requirements */}
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-gray-900">Requirements</h2>
-              <div className="space-y-3 text-sm text-gray-600">
-                {[
-                  "3+ years of experience in a similar role with a strong portfolio.",
-                  "Deep knowledge of " + job.tags.join(', ') + " and related tools.",
-                  "Strong understanding of best practices and industry standards.",
-                  "Ability to communicate clearly and collaborate with cross-functional teams.",
-                  "Self-motivated, detail-oriented, and comfortable with a fast-paced environment."
-                ].map((req, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-                    <span>{req}</span>
-                  </div>
-                ))}
-              </div>
+              {job.requirements?.length > 0 ? (
+                <div className="space-y-3 text-sm text-gray-600">
+                  {job.requirements.map((req, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                      <span>{req}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600">No specific requirements listed.</p>
+              )}
             </div>
 
             {/* Benefits */}
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-gray-900">Benefits</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                {/* Benefit 1 */}
-                <div className="border border-gray-100 bg-gray-50/50 rounded-2xl p-4 flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                    <DollarSign className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-gray-900">Competitive Salary</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">Above market average</p>
-                  </div>
+              {job.benefits?.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {job.benefits.map((benefit, index) => (
+                    <div
+                      key={index}
+                      className="border border-gray-100 bg-gray-50/50 rounded-2xl p-4 flex items-start gap-3"
+                    >
+                      <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+                      <span className="text-sm text-gray-700">{benefit}</span>
+                    </div>
+                  ))}
                 </div>
-
-                {/* Benefit 2 */}
-                <div className="border border-gray-100 bg-gray-50/50 rounded-2xl p-4 flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
-                    <HeartPulse className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-gray-900">Health Insurance</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">Premium global coverage</p>
-                  </div>
-                </div>
-
-                {/* Benefit 3 */}
-                <div className="border border-gray-100 bg-gray-50/50 rounded-2xl p-4 flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
-                    <TrendingUp className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-gray-900">Career Growth</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">Clear promotion tracks</p>
-                  </div>
-                </div>
-
-                {/* Benefit 4 */}
-                <div className="border border-gray-100 bg-gray-50/50 rounded-2xl p-4 flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-                    <Coffee className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-gray-900">Modern Office</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">Snacks & premium coffee</p>
-                  </div>
-                </div>
-
-              </div>
+              ) : (
+                <p className="text-sm text-gray-600">No benefits listed.</p>
+              )}
             </div>
 
           </div>
 
           {/* Right Column: Actions & Overviews */}
           <div className="space-y-6">
+
             
             {/* Top Action Buttons Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-3">
               <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors shadow-sm shadow-blue-200">
                 Apply Now
               </button>
-              <button 
+              <button
                 onClick={() => setIsSaved(!isSaved)}
                 className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-3 rounded-xl font-semibold text-sm transition-colors"
               >
@@ -227,19 +238,19 @@ export default function JobDetail() {
             {/* Job Overview Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
               <h3 className="font-bold text-base text-gray-900 pb-2 border-b border-gray-100">Job Overview</h3>
-              
+
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Job Field</span>
-                  <span className="font-semibold text-gray-900">{job.field}</span>
-                </div>
-                <div className="flex justify-between items-center">
                   <span className="text-gray-500">Job Category</span>
-                  <span className="font-semibold text-blue-600">{CATEGORY_LABELS[job.category] || job.category}</span>
+                  <span className="font-semibold text-blue-600">{job.jobCategoryName}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Employment Type</span>
-                  <span className="font-semibold text-blue-600">{job.type}</span>
+                  <span className="font-semibold text-blue-600">{job.jobType}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-500">Workplace</span>
+                  <span className="font-semibold text-blue-600">{job.workplaceType}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Location</span>
@@ -247,11 +258,13 @@ export default function JobDetail() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Salary</span>
-                  <span className="font-semibold text-gray-900">{job.salary}</span>
+                  <span className="font-semibold text-gray-900">{formatSalary(job.salary)}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Deadline</span>
-                  <span className="font-semibold text-gray-900">{job.timeLeft}</span>
+                  <span className="font-semibold text-gray-900">
+                    {job.deadline} ({deadlineInfo.text})
+                  </span>
                 </div>
               </div>
             </div>
@@ -259,21 +272,20 @@ export default function JobDetail() {
             {/* About Company Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-4">
               <h3 className="font-bold text-base text-gray-900 pb-2 border-b border-gray-100">About Company</h3>
-              
+
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center shrink-0">
                   <span className="font-bold text-xs text-blue-600">{initials}</span>
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm text-gray-900">{job.company}</h4>
-                  <p className="text-xs text-gray-500">{job.field}</p>
+                  <h4 className="font-bold text-sm text-gray-900">{companyName}</h4>
+                  <p className="text-xs text-gray-500">{job.jobCategoryName}</p>
                 </div>
               </div>
 
               <p className="text-xs text-gray-600 leading-relaxed">
-                {job.company} is a leading company in the {job.field} industry, providing quality
-                solutions to clients across the region. We pride ourselves on a culture of
-                excellence and continuous learning.
+                {companyName} is a leading company in the {job.jobCategoryName} industry, providing
+                quality solutions to clients across the region.
               </p>
 
               <button className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline pt-1">

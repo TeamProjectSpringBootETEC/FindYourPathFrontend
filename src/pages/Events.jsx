@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search,
   MapPin,
@@ -10,12 +10,69 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { initialEvents, SORT_OPTIONS } from '@/data/events';
+import { SORT_OPTIONS } from '@/data/events';
+import { getAllevent } from '@/service/eventApi';
 
 const ITEMS_PER_PAGE = 6;
 
+const TYPE_BADGE_COLORS = {
+  careerFair: 'bg-blue-600 text-white',
+  workshop: 'bg-purple-600 text-white',
+  seminar: 'bg-gray-800 text-white',
+  networking: 'bg-teal-600 text-white',
+};
+
+const getFormatKey = (eventType = '') => {
+  const type = eventType.toLowerCase();
+  if (type.includes('hybrid')) return 'hybrid';
+  if (type.includes('virtual') || type.includes('online')) return 'virtual';
+  return 'inPerson';
+};
+
+const getCategoryKey = (categoryName = '') => {
+  const name = categoryName.toLowerCase();
+  if (name.includes('fair') || name.includes('career')) return 'careerFair';
+  if (name.includes('workshop')) return 'workshop';
+  if (name.includes('network')) return 'networking';
+  return 'seminar';
+};
+
+const formatDateLabel = (event) => {
+  if (!event.eventDate) return 'Date TBA';
+  const date = new Date(`${event.eventDate}T${event.startTime || '00:00:00'}`);
+  if (isNaN(date)) return 'Date TBA';
+  return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+};
+
+const mapEvent = (item) => {
+  const categoryKey = getCategoryKey(item.categoryName);
+  const formatKey = getFormatKey(item.eventType);
+  return {
+    id: item.id,
+    title: item.title,
+    type: item.eventType || item.categoryName || 'Event',
+    typeBadgeColor: TYPE_BADGE_COLORS[categoryKey],
+    image: item.image,
+    dateLabel: formatDateLabel(item),
+    date: item.eventDate ? `${item.eventDate}T${item.startTime || '00:00:00'}` : '',
+    location: item.location,
+    badgeText: null,
+    organization: item.companyName,
+    format: item.eventType,
+    formatKey,
+    categoryKey,
+    payment: 'Free',
+    tags: [item.categoryName, item.eventType, item.companyName].filter(Boolean),
+    featured: false,
+    isBookmarked: false,
+    createdAt: item.createdAt || item.eventDate,
+  };
+};
+
 export default function Events() {
-  const [events] = useState(initialEvents);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [eventTypes, setEventTypes] = useState({
@@ -132,6 +189,39 @@ export default function Events() {
     setter(value);
     setCurrentPage(1);
   };
+
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const data = await getAllevent();
+        console.log(data)
+        setEvents(data.map(mapEvent));
+      } catch (err) {
+        setError("Failed to load events");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p>Loading events...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50/50 font-sans text-gray-800 p-4 md:p-8 relative pb-20">

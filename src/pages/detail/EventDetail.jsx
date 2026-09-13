@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -14,7 +14,41 @@ import {
   ChevronRight,
   ShieldCheck,
 } from 'lucide-react';
-import { initialEvents, CATEGORY_OPTIONS, FORMAT_OPTIONS } from '@/data/events';
+import { CATEGORY_OPTIONS, FORMAT_OPTIONS } from '@/data/events';
+import { getEventById } from '@/service/eventApi';
+
+const getFormatKey = (eventType = '') => {
+  const type = eventType.toLowerCase();
+  if (type.includes('hybrid')) return 'hybrid';
+  if (type.includes('virtual') || type.includes('online')) return 'virtual';
+  return 'inPerson';
+};
+
+const getCategoryKey = (categoryName = '') => {
+  const name = categoryName.toLowerCase();
+  if (name.includes('fair') || name.includes('career')) return 'careerFair';
+  if (name.includes('workshop')) return 'workshop';
+  if (name.includes('network')) return 'networking';
+  return 'seminar';
+};
+
+const mapEvent = (item) => ({
+  id: item.id,
+  title: item.title,
+  description: item.description,
+  type: item.eventType || item.categoryName || 'Event',
+  format: item.eventType,
+  categoryKey: getCategoryKey(item.categoryName),
+  formatKey: getFormatKey(item.eventType),
+  date: item.eventDate ? `${item.eventDate}T${item.startTime || '00:00:00'}` : '',
+  location: item.location,
+  organization: item.companyName,
+  payment: 'Free',
+  tags: [item.categoryName, item.eventType, item.companyName].filter(Boolean),
+  featured: false,
+  isBookmarked: false,
+  createdAt: item.createdAt || item.eventDate,
+});
 
 const formatEventDate = (dateStr) =>
   new Date(dateStr).toLocaleDateString('en-GB', {
@@ -39,11 +73,39 @@ export default function EventDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const event = initialEvents.find((e) => e.id === Number(id));
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
-  const [isSaved, setIsSaved] = useState(event?.isBookmarked ?? false);
+  useEffect(() => {
+    const fetchEvent = async () => {
+      try {
+        setLoading(true);
+        const data = await getEventById(id);
+        setEvent(mapEvent(data));
+      } catch (err) {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvent();
+  }, [id]);
 
-  if (!event) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50/50 font-sans text-gray-800 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-center items-center min-h-[80vh]">
+            <p>Loading event...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !event) {
     return (
       <div className="min-h-screen bg-gray-50/50 font-sans text-gray-800 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
