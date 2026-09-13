@@ -1,6 +1,7 @@
 import React from "react";
 import { Route, Routes, Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import Footer from "@/pages/Footer";
 import Sidebar from "@/components/Dashboards/header/Sidebar";
 import Home from "../pages/Home";
 import CategoryJob from "@/components/Dashboards/contants/CategoryJob";
@@ -10,6 +11,7 @@ import Events from "@/pages/Events";
 import EventDetail from "@/pages/detail/EventDetail";
 import ApplyJob from "@/pages/ApplyJob";
 import ApplySuccess from "@/pages/ApplySuccess";
+import StudentDashboard from "@/pages/StudentDashboard";
 import Register from "@/pages/Register";
 import Login from "@/pages/Login";
 import Company from "@/components/Dashboards/contants/Company";
@@ -25,6 +27,7 @@ const PublicLayout = () => {
       <main>
         <Outlet />
       </main>
+      <Footer />
     </>
   );
 };
@@ -55,6 +58,7 @@ function RouteApp() {
         <Route path="/event/:id" element={<EventDetail />} />
         <Route path="/companies" element={<h1 className="p-4 text-2xl font-bold">Companies Page</h1>} />
         <Route path="/about" element={<AboutUs/>} />
+        <Route path="/profile" element={<StudentDashboard />} />
       </Route>
 
       {/* Auth Pages -> No Navbar / Footer */}

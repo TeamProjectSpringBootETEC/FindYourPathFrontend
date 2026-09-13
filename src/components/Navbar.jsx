@@ -1,11 +1,32 @@
 import React, { useState, useRef, useEffect } from "react";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
+import { User, LogOut } from "lucide-react";
+import { getStudentProfileByUserId } from "@/service/studentProfileApi";
 
 function Navbar() {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+
   const [selectedLang, setSelectedLang] = useState("English");
   const [langOpen, setLangOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState(null);
 
   const langDropdownRef = useRef(null);
+  const profileDropdownRef = useRef(null);
+
+  const initial = (user?.name || "U").trim().charAt(0).toUpperCase();
+
+  // Load the user's profile photo (from their student profile) for the avatar
+  useEffect(() => {
+    if (!user?.id) {
+      setPhotoUrl(null);
+      return;
+    }
+    getStudentProfileByUserId(user.id)
+      .then((profile) => setPhotoUrl(profile.profile_photo || null))
+      .catch(() => setPhotoUrl(null));
+  }, [user?.id]);
 
   const navLinks = [
     { name: "Home", path: "/" },
@@ -19,7 +40,7 @@ function Navbar() {
     { code: "km", name: "Khmer" },
   ];
 
-  // Close language dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -27,6 +48,12 @@ function Navbar() {
         !langDropdownRef.current.contains(event.target)
       ) {
         setLangOpen(false);
+      }
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target)
+      ) {
+        setProfileOpen(false);
       }
     };
 
@@ -36,6 +63,13 @@ function Navbar() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setPhotoUrl(null);
+    setProfileOpen(false);
+    navigate("/");
+  };
 
   return (
     <nav className="sticky top-0 z-50 flex items-center justify-between border-b border-gray-100 bg-white px-8 py-4 shadow-sm">
@@ -169,21 +203,79 @@ function Navbar() {
           </svg>
         </button>
 
-        {/* ================= LOGIN ================= */}
-        <Link
-          to="/login"
-          className="font-semibold text-blue-600 transition-colors hover:text-blue-700 hover:underline"
-        >
-          Login
-        </Link>
+        {/* ================= AUTH ================= */}
+        {user ? (
+          <div ref={profileDropdownRef} className="relative">
+            {/* ================= PROFILE AVATAR (first letter) ================= */}
+            <button
+              type="button"
+              onClick={() => setProfileOpen(!profileOpen)}
+              className="focus:outline-none"
+              aria-label="Profile menu"
+            >
+              {photoUrl ? (
+                <img
+                  src={photoUrl}
+                  alt={user.name || "User"}
+                  className="w-10 h-10 rounded-full object-cover border-2 border-gray-100 transition-colors hover:border-blue-600"
+                />
+              ) : (
+                <span className="w-10 h-10 rounded-full bg-blue-600 text-white text-base font-semibold flex items-center justify-center transition-colors hover:bg-blue-700">
+                  {initial}
+                </span>
+              )}
+            </button>
 
-        {/* ================= REGISTER ================= */}
-        <Link
-          to="/register"
-          className="rounded-full bg-blue-600 px-6 py-2.5 font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
-        >
-          Register
-        </Link>
+            {/* ================= PROFILE DROPDOWN ================= */}
+            {profileOpen && (
+              <div className="absolute right-0 top-full z-[100] mt-2 w-52 overflow-hidden rounded-lg border border-gray-100 bg-white py-1 shadow-xl">
+                <div className="border-b border-gray-100 px-4 py-3">
+                  <p className="truncate text-sm font-semibold text-gray-900">
+                    {user.name || "User"}
+                  </p>
+                  <p className="truncate text-xs text-gray-500">{user.email}</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    navigate("/profile");
+                  }}
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-blue-600"
+                >
+                  <User className="h-4 w-4" /> Profile
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
+                >
+                  <LogOut className="h-4 w-4" /> Logout
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* ================= LOGIN ================= */}
+            <Link
+              to="/login"
+              className="font-semibold text-blue-600 transition-colors hover:text-blue-700 hover:underline"
+            >
+              Login
+            </Link>
+
+            {/* ================= REGISTER ================= */}
+            <Link
+              to="/register"
+              className="rounded-full bg-blue-600 px-6 py-2.5 font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+            >
+              Register
+            </Link>
+          </>
+        )}
       </div>
     </nav>
   );

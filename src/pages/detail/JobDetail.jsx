@@ -243,9 +243,9 @@ export default function JobDetail() {
               <h3 className="font-bold text-base text-gray-900 pb-2 border-b border-gray-100">Job Overview</h3>
 
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Job Category</span>
-                  <span className="font-semibold text-blue-600">{job.jobCategoryName}</span>
+                <div className="flex justify-between items-start gap-4">
+                  <span className="text-gray-500 shrink-0">Job Category</span>
+                  <span className="font-semibold text-blue-600 text-right">{job.jobCategoryName}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Employment Type</span>
