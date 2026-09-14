@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import axios from "axios";
 import {
   CalendarDays,
   Plus,
@@ -17,10 +16,14 @@ import {
   TrendingUp,
   CalendarOff,
 } from "lucide-react";
-
-const API_BASE_URL = "http://localhost:8089/api/events";
-const CATEGORIES_API_URL = "http://localhost:8089/api/event-categories";
-const COMPANIES_API_URL = "http://localhost:8089/api/companies";
+import {
+  getAllevent,
+  getAllEventCategories,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+} from "@/service/eventApi";
+import { getAllCompanies } from "@/service/CompanyApi";
 
 const initialFormState = {
   title: "",
@@ -52,8 +55,8 @@ function Events() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_BASE_URL);
-      const data = response.data.data || response.data;
+      const response = await getAllevent();
+      const data = response.data || response;
       setEvents(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch events:", err);
@@ -64,14 +67,14 @@ function Events() {
 
   const fetchMeta = async () => {
     try {
-      const [catRes, comRes] = await Promise.all([
-        axios.get(CATEGORIES_API_URL).catch(() => ({ data: [] })),
-        axios.get(COMPANIES_API_URL).catch(() => ({ data: [] })),
+      const [catData, comData] = await Promise.all([
+        getAllEventCategories().catch(() => null),
+        getAllCompanies().catch(() => null),
       ]);
-      const catData = catRes.data.data || catRes.data;
-      const comData = comRes.data.data || comRes.data;
-      setCategories(Array.isArray(catData) ? catData : []);
-      setCompanies(Array.isArray(comData) ? comData : []);
+      const cats = catData?.data || catData;
+      const comps = comData?.data || comData;
+      setCategories(Array.isArray(cats) ? cats : []);
+      setCompanies(Array.isArray(comps) ? comps : []);
     } catch (err) {
       console.error("Failed to fetch event meta:", err);
     }
@@ -203,9 +206,9 @@ function Events() {
     try {
       setSubmitting(true);
       if (editingEvent) {
-        await axios.put(`${API_BASE_URL}/${editingEvent.id}`, payload);
+        await updateEvent(editingEvent.id, payload);
       } else {
-        await axios.post(API_BASE_URL, payload);
+        await createEvent(payload);
       }
       setIsModalOpen(false);
       fetchEvents();
@@ -223,7 +226,7 @@ function Events() {
 
     try {
       setDeletingId(id);
-      await axios.delete(`${API_BASE_URL}/${id}`);
+      await deleteEvent(id);
       setEvents((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
       console.error("Failed to delete event:", err);

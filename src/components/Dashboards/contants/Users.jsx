@@ -23,9 +23,6 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 
-const API_BASE_URL = "http://localhost:8089/api/v1/users";
-const ROLES_API_URL = "http://localhost:8089/api/v1/roles";
-
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
 const STATUS_COLORS = {

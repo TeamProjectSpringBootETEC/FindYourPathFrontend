@@ -21,7 +21,6 @@ import Users from "@/components/Dashboards/contants/Users";
 import Jobs from "@/components/Dashboards/contants/Jobs";
 import AboutUs from "@/pages/AboutUs";
 import Scholarships from "@/components/Dashboards/contants/Scholarships";
-import Universities from "@/components/Dashboards/contants/Universities";
 import Applications from "@/components/Dashboards/contants/Applications";
 import Reports from "@/components/Dashboards/contants/Reports";
 import Notifications from "@/components/Dashboards/contants/Notifications";
@@ -129,7 +128,6 @@ function RouteApp() {
         <Route index element={<Overview />} />
         <Route path="users" element={<Users/>} />
         <Route path="companies" element={<Company/>} />
-        <Route path="universities" element={<Universities/>} />
         <Route path="jobs" element={<Jobs/>} />
         <Route path="categories" element={<CategoryJob/>} />
         <Route path="events" element={<AdminEvents/>} />

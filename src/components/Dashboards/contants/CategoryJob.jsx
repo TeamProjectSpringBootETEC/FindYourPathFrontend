@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import axios from "axios";
 import {
   Tag,
   Plus,
@@ -19,10 +18,14 @@ import {
   SlidersHorizontal,
   Layers,
 } from "lucide-react";
-
-const API_BASE_URL = "http://localhost:8089/api/job-categories";
-const JOBS_API_URL = "http://localhost:8089/api/jobs";
-const FIELDS_API_URL = "http://localhost:8089/api/job-fields";
+import {
+  getAllJob,
+  getAllJobFields,
+  getAllJobCategories,
+  createJobCategory,
+  updateJobCategory,
+  deleteJobCategory,
+} from "@/service/JobApi";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
@@ -60,9 +63,23 @@ function CategoryJob() {
     toastTimer.current = setTimeout(() => setToast(null), 3000);
   }, []);
 
-  const getFieldId = (cat) => cat.fieldId ?? cat.field_id;
+  const getFieldId = (cat) => {
+    if (!cat) return null;
+    const id =
+      cat.fieldId ??
+      cat.field_id ??
+      cat.jobFieldId ??
+      cat.jobField?.id ??
+      cat.job_field_id ??
+      cat.field?.id ??
+      cat.jobField?.field?.id;
+    return id !== undefined && id !== null ? String(id) : null;
+  };
   const getFieldName = (cat) =>
-    cat.fieldName ?? cat.field_name ?? (cat.field?.name ?? "");
+    cat.fieldName ??
+    cat.field_name ??
+    cat.jobField?.name ??
+    (cat.field?.name ?? "");
 
   const getJobCategoryId = (job) => {
     if (!job) return null;
@@ -80,33 +97,23 @@ function CategoryJob() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [catRes, jobRes, fieldRes] = await Promise.all([
-        axios.get(API_BASE_URL),
-        axios.get(JOBS_API_URL).catch(() => ({ data: [] })),
-        axios.get(FIELDS_API_URL).catch(() => ({ data: [] })),
+      const [catData, jobData, fieldData] = await Promise.all([
+        getAllJobCategories(),
+        getAllJob().catch(() => []),
+        getAllJobFields().catch(() => []),
       ]);
 
-      const catData = Array.isArray(catRes.data)
-        ? catRes.data
-        : catRes.data.data || [];
-      const jobData = Array.isArray(jobRes.data)
-        ? jobRes.data
-        : jobRes.data.data || [];
-      const fieldData = Array.isArray(fieldRes.data)
-        ? fieldRes.data
-        : fieldRes.data.data || [];
+      const cats = Array.isArray(catData) ? catData : catData.data || [];
+      const jobs = Array.isArray(jobData) ? jobData : jobData.data || [];
+      const fields = Array.isArray(fieldData) ? fieldData : fieldData.data || [];
 
-      console.log("Categories Data:", catData);
-      console.log("Jobs Data:", jobData);
-      console.log("Fields Data:", fieldData);
-
-      setCategories(catData);
-      setJobs(jobData);
-      setFields(fieldData);
+      setCategories(cats);
+      setJobs(jobs);
+      setFields(fields);
     } catch (err) {
       console.error("Failed to fetch data:", err);
       showToast(
-        "Failed to load data. Make sure your API is running at http://localhost:8089.",
+        "Failed to load data. Make sure your API is running.",
         "error"
       );
     } finally {
@@ -293,10 +300,10 @@ function CategoryJob() {
       };
 
       if (editingCategory) {
-        await axios.put(`${API_BASE_URL}/${editingCategory.id}`, payload);
+        await updateJobCategory(editingCategory.id, payload);
         showToast("Category updated successfully.");
       } else {
-        await axios.post(API_BASE_URL, payload);
+        await createJobCategory(payload);
         showToast("Category created successfully.");
       }
 
@@ -319,7 +326,7 @@ function CategoryJob() {
     }
     try {
       setDeletingId(id);
-      await axios.delete(`${API_BASE_URL}/${id}`);
+      await deleteJobCategory(id);
       setCategories((prev) => prev.filter((cat) => cat.id !== id));
       showToast("Category deleted.");
     } catch (err) {
@@ -341,7 +348,7 @@ function CategoryJob() {
     }
     try {
       await Promise.all(
-        selectedIds.map((id) => axios.delete(`${API_BASE_URL}/${id}`))
+        selectedIds.map((id) => deleteJobCategory(id))
       );
       setCategories((prev) =>
         prev.filter((c) => !selectedIds.includes(c.id))

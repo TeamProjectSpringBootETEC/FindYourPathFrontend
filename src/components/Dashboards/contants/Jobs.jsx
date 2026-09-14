@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import axios from "axios";
 import {
   Plus,
   GripVertical,
@@ -23,10 +22,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-
-const JOBS_API_URL = "http://localhost:8089/api/jobs";
-const CATEGORIES_API_URL = "http://localhost:8089/api/job-categories";
-const COMPANIES_API_URL = "http://localhost:8089/api/companies";
+import { getAllJob, getAllJobCategories, createJob, updateJob, deleteJob } from "@/service/JobApi";
+import { getAllCompanies } from "@/service/CompanyApi";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
@@ -84,30 +81,24 @@ export default function Jobs() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [catRes, jobRes, compRes] = await Promise.all([
-        axios.get(CATEGORIES_API_URL).catch(() => ({ data: [] })),
-        axios.get(JOBS_API_URL).catch(() => ({ data: [] })),
-        axios.get(COMPANIES_API_URL).catch(() => ({ data: [] })),
+      const [catData, jobData, compData] = await Promise.all([
+        getAllJobCategories().catch(() => []),
+        getAllJob().catch(() => []),
+        getAllCompanies().catch(() => []),
       ]);
 
-      const catData = Array.isArray(catRes.data)
-        ? catRes.data
-        : catRes.data.data || [];
-      const jobData = Array.isArray(jobRes.data)
-        ? jobRes.data
-        : jobRes.data.data || [];
-      const compData = Array.isArray(compRes.data)
-        ? compRes.data
-        : compRes.data.data || [];
+      const cats = Array.isArray(catData) ? catData : catData.data || [];
+      const jobs = Array.isArray(jobData) ? jobData : jobData.data || [];
+      const comps = Array.isArray(compData) ? compData : compData.data || [];
 
       // Debugging: មើល Structure នៃទិន្នន័យក្នុង Console
       console.log("Jobs API Response:", jobData);
       console.log("Categories API Response:", catData);
       console.log("Companies API Response:", compData);
 
-      setCategories(catData);
-      setJobs(jobData);
-      setCompanies(compData);
+      setCategories(cats);
+      setJobs(jobs);
+      setCompanies(comps);
     } catch (err) {
       console.error("Error fetching data:", err);
       showToast("Failed to load data. Check if the API is running.", "error");
@@ -353,14 +344,10 @@ export default function Jobs() {
     try {
       setSubmitting(true);
       if (editingJobId) {
-        await axios.put(`${JOBS_API_URL}/${editingJobId}`, payload, {
-          headers: { "Content-Type": "application/json" },
-        });
+        await updateJob(editingJobId, payload);
         showToast("Job updated successfully.");
       } else {
-        await axios.post(JOBS_API_URL, payload, {
-          headers: { "Content-Type": "application/json" },
-        });
+        await createJob(payload);
         showToast("Job created successfully.");
       }
       setIsModalOpen(false);
@@ -382,7 +369,7 @@ export default function Jobs() {
     if (!window.confirm("Are you sure you want to delete this job posting?")) return;
     try {
       setDeletingId(id);
-      await axios.delete(`${JOBS_API_URL}/${id}`);
+      await deleteJob(id);
       setJobs((prev) => prev.filter((j) => j.id !== id));
       showToast("Job deleted.");
     } catch (err) {
@@ -398,7 +385,7 @@ export default function Jobs() {
     if (!window.confirm(`Delete ${selectedIds.length} selected job(s)?`)) return;
     try {
       await Promise.all(
-        selectedIds.map((id) => axios.delete(`${JOBS_API_URL}/${id}`))
+        selectedIds.map((id) => deleteJob(id))
       );
       setJobs((prev) => prev.filter((j) => !selectedIds.includes(j.id)));
       showToast(`${selectedIds.length} job(s) deleted.`);

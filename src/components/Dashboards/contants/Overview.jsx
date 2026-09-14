@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import axios from "axios";
 import {
   Users,
   Building2,
@@ -21,15 +20,11 @@ import {
   MapPin,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-
-const API = {
-  users: "http://localhost:8089/api/v1/users",
-  companies: "http://localhost:8089/api/companies",
-  jobs: "http://localhost:8089/api/jobs",
-  events: "http://localhost:8089/api/events",
-  notifications: "http://localhost:8089/api/notifications",
-  categories: "http://localhost:8089/api/job-categories",
-};
+import { getAllUsers } from "@/service/userApi";
+import { getAllCompanies } from "@/service/CompanyApi";
+import { getAllJob, getAllJobCategories } from "@/service/JobApi";
+import { getAllevent } from "@/service/eventApi";
+import { getAllNotifications } from "@/service/notificationApi";
 
 function Overview() {
   const [users, setUsers] = useState([]);
@@ -44,35 +39,35 @@ function Overview() {
     const fetchAll = async () => {
       try {
         const [u, c, j, e, n, cat] = await Promise.allSettled([
-          axios.get(API.users),
-          axios.get(API.companies),
-          axios.get(API.jobs),
-          axios.get(API.events),
-          axios.get(API.notifications),
-          axios.get(API.categories),
+          getAllUsers(),
+          getAllCompanies(),
+          getAllJob(),
+          getAllevent(),
+          getAllNotifications(),
+          getAllJobCategories(),
         ]);
         if (u.status === "fulfilled") {
-          const d = u.value.data;
+          const d = u.value;
           setUsers(Array.isArray(d) ? d : d.data || []);
         }
         if (c.status === "fulfilled") {
-          const d = c.value.data;
+          const d = c.value;
           setCompanies(Array.isArray(d) ? d : d.data || []);
         }
         if (j.status === "fulfilled") {
-          const d = j.value.data;
+          const d = j.value;
           setJobs(Array.isArray(d) ? d : d.data || []);
         }
         if (e.status === "fulfilled") {
-          const d = e.value.data;
+          const d = e.value;
           setEvents(Array.isArray(d) ? d : d.data || []);
         }
         if (n.status === "fulfilled") {
-          const d = n.value.data;
+          const d = n.value;
           setNotifications(Array.isArray(d) ? d : d.data || []);
         }
         if (cat.status === "fulfilled") {
-          const d = cat.value.data;
+          const d = cat.value;
           setCategories(Array.isArray(d) ? d : d.data || []);
         }
       } catch {

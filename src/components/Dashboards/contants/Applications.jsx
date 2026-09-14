@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { getAllApplications, assessApplication } from "@/service/applicationApi";
 import {
   FileText,
   Search,
@@ -13,20 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-// NOTE: The backend only exposes /api/applications via student/job id.
-// This page uses realistic sample data for the design until a
-// GET /api/applications endpoint is added.
-const SAMPLE_APPLICATIONS = [
-  { id: 1, jobTitle: "Senior Frontend Developer", company: "Nexa Systems", student: "Sophea Chan", email: "sophea.chan@gmail.com", location: "Phnom Penh", status: "REVIEWING", appliedAt: "2026-09-10", score: 87 },
-  { id: 2, jobTitle: "Backend Engineer", company: "CamboTech", student: "Dara Kim", email: "dara.kim@gmail.com", location: "Phnom Penh", status: "SHORTLISTED", appliedAt: "2026-09-09", score: 92 },
-  { id: 3, jobTitle: "UI/UX Designer", company: "PixelHive", student: "Sreyneang Lim", email: "sreyneang.lim@gmail.com", location: "Remote", status: "PENDING", appliedAt: "2026-09-08", score: 74 },
-  { id: 4, jobTitle: "Data Analyst", company: "FinBridge", student: "Vuthy Sorn", email: "vuthy.sorn@gmail.com", location: "Phnom Penh", status: "REJECTED", appliedAt: "2026-09-07", score: 61 },
-  { id: 5, jobTitle: "DevOps Engineer", company: "CloudKh", student: "Malis Phon", email: "malis.phon@gmail.com", location: "Hybrid", status: "SHORTLISTED", appliedAt: "2026-09-06", score: 90 },
-  { id: 6, jobTitle: "Mobile Developer", company: "AppWorks", student: "Ratanak Sok", email: "ratanak.sok@gmail.com", location: "Phnom Penh", status: "CONVERTED", appliedAt: "2026-09-05", score: 95 },
-  { id: 7, jobTitle: "Project Manager", company: "Achieve Partners", student: "Channara Oung", email: "channara.oung@gmail.com", location: "Remote", status: "REVIEWING", appliedAt: "2026-09-04", score: 81 },
-  { id: 8, jobTitle: "QA Engineer", company: "Nexa Systems", student: "Leakena Sar", email: "leakena.sar@gmail.com", location: "Phnom Penh", status: "PENDING", appliedAt: "2026-09-03", score: 68 },
-];
-
+// Data comes from the backend via GET /api/applications (applicationApi.getAllApplications).
 const STATUS_STYLES = {
   PENDING: "bg-amber-50 text-amber-600 border border-amber-200",
   REVIEWING: "bg-sky-50 text-sky-600 border border-sky-200",
@@ -47,25 +35,69 @@ const STATUS_OPTIONS = [
 function Applications() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [applications, setApplications] = useState(SAMPLE_APPLICATIONS);
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [assessingId, setAssessingId] = useState(null);
+
+  const statusOf = (a) => String(a.status || "PENDING").toUpperCase();
+  const displayName = (a) => a.studentName || `Student #${a.studentProfileId || ""}`;
+
+  const handleAssess = async (app) => {
+    setAssessingId(app.id);
+    try {
+      const res = await assessApplication(app.id);
+      const updated = res?.data || res;
+      setApplications((prev) =>
+        prev.map((a) => (a.id === app.id ? { ...a, ...updated } : a))
+      );
+    } catch (err) {
+      console.error("AI check failed:", err);
+      alert("AI check failed: " + (err.response?.data?.message || err.message));
+    } finally {
+      setAssessingId(null);
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    getAllApplications()
+      .then((res) => {
+        const data = res?.data || res;
+        if (active && Array.isArray(data)) {
+          setApplications(data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load applications:", err);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase();
     return applications.filter((a) => {
       const matchesSearch =
-        a.jobTitle.toLowerCase().includes(q) ||
-        a.student.toLowerCase().includes(q) ||
-        a.company.toLowerCase().includes(q);
+        (a.jobTitle || "").toLowerCase().includes(q) ||
+        displayName(a).toLowerCase().includes(q) ||
+        (a.companyName || "").toLowerCase().includes(q);
       const matchesStatus =
-        statusFilter === "ALL" || a.status === statusFilter;
+        statusFilter === "ALL" || statusOf(a) === statusFilter;
       return matchesSearch && matchesStatus;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applications, searchQuery, statusFilter]);
 
   const countByStatus = useMemo(() => {
     const map = {};
     applications.forEach((a) => {
-      map[a.status] = (map[a.status] || 0) + 1;
+      const s = statusOf(a);
+      map[s] = (map[s] || 0) + 1;
     });
     return map;
   }, [applications]);
@@ -167,15 +199,23 @@ function Applications() {
                 <th className="py-4 px-4 md:px-6">Candidate</th>
                 <th className="py-4 px-4 hidden md:table-cell">Job / Company</th>
                 <th className="py-4 px-4 hidden lg:table-cell">Applied</th>
-                <th className="py-4 px-4">Match Score</th>
+                <th className="py-4 px-4">GPA</th>
                 <th className="py-4 px-4">Status</th>
+                <th className="py-4 px-4 hidden lg:table-cell">AI Verdict</th>
                 <th className="py-4 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
-              {filtered.length === 0 ? (
+              {loading ? (
                 <tr>
-                  <td colSpan="6" className="py-16 text-center text-slate-400">
+                  <td colSpan="7" className="py-16 text-center text-slate-400">
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto text-violet-600 mb-2" />
+                    <p className="text-xs">Loading applications...</p>
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-16 text-center text-slate-400">
                     No applications match your filters.
                   </td>
                 </tr>
@@ -185,15 +225,15 @@ function Applications() {
                     <td className="py-4 px-4 md:px-6">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                          {a.student.charAt(0).toUpperCase()}
+                          {(displayName(a) || "?").charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <p className="font-semibold text-slate-900 text-sm">
-                            {a.student}
+                            {displayName(a)}
                           </p>
                           <p className="text-xs text-slate-400 flex items-center gap-1">
                             <Mail size={10} />
-                            {a.email}
+                            {a.studentEmail || "N/A"}
                           </p>
                         </div>
                       </div>
@@ -204,45 +244,84 @@ function Applications() {
                       </p>
                       <span className="text-xs text-slate-400 inline-flex items-center gap-1 mt-0.5">
                         <Briefcase size={10} />
-                        {a.company} · <MapPin size={10} /> {a.location}
+                        {a.companyName || "N/A"} · <MapPin size={10} /> {a.location || "N/A"}
                       </span>
                     </td>
                     <td className="py-4 px-4 hidden lg:table-cell text-xs text-slate-500">
                       {formatDate(a.appliedAt)}
                     </td>
                     <td className="py-4 px-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-14 h-1.5 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
-                          <div
-                            className={`h-full rounded-full ${
-                              a.score >= 85
-                                ? "bg-emerald-500"
-                                : a.score >= 70
-                                ? "bg-amber-500"
-                                : "bg-rose-400"
-                            }`}
-                            style={{ width: `${Math.min(a.score, 100)}%` }}
-                          />
+                      {a.studentGpa != null ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-14 h-1.5 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
+                            <div
+                              className={`h-full rounded-full ${
+                                a.studentGpa >= 3.4
+                                  ? "bg-emerald-500"
+                                  : a.studentGpa >= 2.8
+                                  ? "bg-amber-500"
+                                  : "bg-rose-400"
+                              }`}
+                              style={{ width: `${Math.min((a.studentGpa / 4) * 100, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-bold text-slate-700">
+                            {a.studentGpa}
+                          </span>
                         </div>
-                        <span className="text-xs font-bold text-slate-700">
-                          {a.score}%
-                        </span>
-                      </div>
+                      ) : (
+                        <span className="text-xs text-slate-400">—</span>
+                      )}
                     </td>
                     <td className="py-4 px-4">
                       <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold ${STATUS_STYLES[a.status]}`}
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold ${STATUS_STYLES[statusOf(a)] || STATUS_STYLES.PENDING}`}
                       >
-                        {a.status}
+                        {statusOf(a)}
                       </span>
                     </td>
+                    <td className="py-4 px-4 hidden lg:table-cell">
+                      {a.aiScore != null ? (
+                        <div className="inline-flex flex-col items-start gap-1" title={a.aiSummary || ""}>
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="text-sm font-bold text-slate-800">{a.aiScore}</span>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${String(a.aiDecision).toUpperCase() === "SHORTLISTED" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
+                              <Sparkles size={10} className="mr-1" />
+                              {String(a.aiDecision || "—").toUpperCase()}
+                            </span>
+                          </span>
+                          {a.aiSummary && (
+                            <span className="text-[11px] text-slate-400 max-w-[220px] truncate">
+                              {a.aiSummary}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400">Not checked yet</span>
+                      )}
+                    </td>
                     <td className="py-4 px-4 text-right">
-                      <button
-                        onClick={() => alert("Status update coming soon")}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 text-violet-700 hover:bg-violet-100 rounded-lg text-xs font-semibold transition"
-                      >
-                        Update Status
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleAssess(a)}
+                          disabled={assessingId === a.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-semibold transition disabled:opacity-50"
+                          title="Ask AI to check match against job requirements"
+                        >
+                          {assessingId === a.id ? (
+                            <Loader2 size={13} className="animate-spin" />
+                          ) : (
+                            <Sparkles size={13} />
+                          )}
+                          AI Check
+                        </button>
+                        <button
+                          onClick={() => alert("Status update coming soon")}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 text-violet-700 hover:bg-violet-100 rounded-lg text-xs font-semibold transition"
+                        >
+                          Update Status
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -250,16 +329,6 @@ function Applications() {
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* Info note */}
-      <div className="bg-sky-50 border border-sky-200 text-sky-700 rounded-2xl p-4 text-xs font-medium flex items-start gap-3">
-        <Loader2 className="w-4 h-4 shrink-0 mt-0.5 text-sky-500" />
-        <p>
-          This page currently displays sample data. The backend exposes
-          applications only per student or job (<code>/api/applications/student/{"{id}"}</code>).
-          Add a <code>GET /api/applications</code> endpoint to list all applications.
-        </p>
       </div>
     </div>
   );

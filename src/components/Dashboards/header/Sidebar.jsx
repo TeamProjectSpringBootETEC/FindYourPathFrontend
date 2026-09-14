@@ -21,11 +21,9 @@ const mainNavItems = [
   { name: "Overview", path: "/dashboard", icon: LayoutGrid, end: true },
   { name: "Users", path: "/dashboard/users", icon: Users },
   { name: "Companies", path: "/dashboard/companies", icon: Building2 },
-  { name: "Universities", path: "/dashboard/universities", icon: GraduationCap },
   { name: "Jobs", path: "/dashboard/jobs", icon: BriefcaseIcon },
   { name: "Job categories", path: "/dashboard/categories", icon: FolderTree },
   { name: "Events", path: "/dashboard/events", icon: CalendarDays },
-  { name: "Scholarships", path: "/dashboard/scholarships", icon: Award },
   { name: "Applications", path: "/dashboard/applications", icon: FileText },
   { name: "Report & Analytics", path: "/dashboard/reports", icon: BarChart3 },
 ];
