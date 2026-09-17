@@ -25,7 +25,14 @@ import Applications from "@/components/Dashboards/contants/Applications";
 import Reports from "@/components/Dashboards/contants/Reports";
 import Notifications from "@/components/Dashboards/contants/Notifications";
 import Settings from "@/components/Dashboards/contants/Settings";
+import CompanyLayout from "@/components/CompanyDashboard/CompanyLayout";
+import HomeDashboard from "@/components/CompanyDashboard/home/HomeDashboard";
+import CompanyProfile from "@/components/CompanyDashboard/profile/CompanyProfile";
+import JobList from "@/components/CompanyDashboard/jobs/JobList";
+import ApplicantList from "@/components/CompanyDashboard/applicants/ApplicantList";
+import EventList from "@/components/CompanyDashboard/events/EventList";
 import { Menu } from "lucide-react"; 
+import RequireRole from "@/components/RequireRole"; 
 
 // Layout for Public Pages (with Navbar)
 const PublicLayout = () => {
@@ -124,7 +131,7 @@ function RouteApp() {
       <Route path="/register" element={<Register />} />
 
       {/* Dashboard Pages -> Shows Sidebar (No Navbar) */}
-      <Route path="/dashboard" element={<DashboardLayout />}>
+      <Route path="/dashboard" element={<RequireRole roleId={1}><DashboardLayout /></RequireRole>}>
         <Route index element={<Overview />} />
         <Route path="users" element={<Users/>} />
         <Route path="companies" element={<Company/>} />
@@ -136,6 +143,16 @@ function RouteApp() {
         <Route path="reports" element={<Reports/>} />
         <Route path="settings" element={<Settings/>} />
         <Route path="notifications" element={<Notifications/>} />
+      </Route>
+
+      {/* Company (Employer) Dashboard -> Shows Company Sidebar */}
+      <Route path="/company-dashboard" element={<RequireRole roleId={2}><CompanyLayout /></RequireRole>}>
+        <Route index element={<HomeDashboard />} />
+        <Route path="profile" element={<CompanyProfile />} />
+        <Route path="jobs" element={<JobList />} />
+        <Route path="applicants" element={<ApplicantList />} />
+        <Route path="events" element={<EventList />} />
+        <Route path="categories" element={<CategoryJob />} />
       </Route>
     </Routes>
   );

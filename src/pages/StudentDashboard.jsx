@@ -9,6 +9,7 @@ import ApplicationsSection from "@/components/dashboard/ApplicationsSection";
 import ProfileForm from "@/components/Profile/ProfileForm";
 import ExperienceSection from "@/components/Profile/ExperienceSection";
 import EducationSection from "@/components/Profile/EducationSection";
+import SkillsSection from "@/components/Profile/SkillsSection";
 import AccountForm from "@/components/Profile/AccountForm";
 
 function NeedProfileCard({ onGo }) {
@@ -105,6 +106,9 @@ export default function StudentDashboard() {
           {active === "education" &&
             (profile ? <EducationSection studentProfileId={profile.id} /> : <NeedProfileCard onGo={goPersonal} />)}
 
+          {active === "skills" &&
+            (profile ? <SkillsSection studentProfileId={profile.id} /> : <NeedProfileCard onGo={goPersonal} />)}
+
           {active === "applications" && <ApplicationsSection studentProfileId={profile?.id} />}
 
           {active === "account" && (
@@ -115,8 +119,9 @@ export default function StudentDashboard() {
               <AccountForm
                 user={user}
                 onSaved={(updated) => {
-                  localStorage.setItem("user", JSON.stringify(updated));
-                  setUser(updated);
+                  const refreshed = { ...updated, token: user.token };
+                  localStorage.setItem("user", JSON.stringify(refreshed));
+                  setUser(refreshed);
                 }}
               />
             </section>

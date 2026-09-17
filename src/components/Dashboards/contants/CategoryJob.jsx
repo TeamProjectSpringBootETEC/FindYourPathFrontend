@@ -22,6 +22,7 @@ import {
   getAllJob,
   getAllJobFields,
   getAllJobCategories,
+  createJobField,
   createJobCategory,
   updateJobCategory,
   deleteJobCategory,
@@ -54,6 +55,8 @@ function CategoryJob() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [newFieldMode, setNewFieldMode] = useState(false);
+  const [newFieldName, setNewFieldName] = useState("");
 
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
@@ -269,6 +272,8 @@ function CategoryJob() {
       ...EMPTY_FORM,
       fieldId: fields[0]?.id !== undefined ? String(fields[0].id) : "",
     });
+    setNewFieldMode(false);
+    setNewFieldName("");
     setIsModalOpen(true);
   };
 
@@ -284,6 +289,8 @@ function CategoryJob() {
           ? String(fields[0].id)
           : "",
     });
+    setNewFieldMode(false);
+    setNewFieldName("");
     setIsModalOpen(true);
   };
 
@@ -293,10 +300,25 @@ function CategoryJob() {
 
     try {
       setSubmitting(true);
+      let fieldId = formData.fieldId ? Number(formData.fieldId) : null;
+
+      if (newFieldMode) {
+        if (!newFieldName.trim()) {
+          showToast("Please enter a name for the new job field.", "error");
+          setSubmitting(false);
+          return;
+        }
+        const createdField = await createJobField({ name: newFieldName.trim() });
+        fieldId = createdField?.id ?? createdField?.fieldId ?? null;
+        if (fieldId == null) {
+          throw new Error("Failed to create job field.");
+        }
+      }
+
       const payload = {
         name: formData.name.trim(),
         description: formData.description ? formData.description.trim() : "",
-        fieldId: formData.fieldId ? Number(formData.fieldId) : null,
+        fieldId,
       };
 
       if (editingCategory) {
@@ -310,6 +332,8 @@ function CategoryJob() {
       setIsModalOpen(false);
       setEditingCategory(null);
       setFormData(EMPTY_FORM);
+      setNewFieldMode(false);
+      setNewFieldName("");
       fetchData();
     } catch (err) {
       console.error("Failed to save category:", err);
@@ -727,18 +751,40 @@ function CategoryJob() {
                 <label className={labelClass}>Job Field *</label>
                 <select
                   required
-                  value={formData.fieldId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, fieldId: e.target.value })
-                  }
+                  value={newFieldMode ? "NEW" : formData.fieldId}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "NEW") {
+                      setNewFieldMode(true);
+                      setNewFieldName("");
+                    } else {
+                      setNewFieldMode(false);
+                      setFormData({ ...formData, fieldId: v });
+                    }
+                  }}
                   className={inputClass}
                 >
                   <option value="" disabled>Select a job field</option>
                   {fields.map((f) => (
                     <option key={f.id} value={String(f.id)}>{f.name}</option>
                   ))}
+                  <option value="NEW">Create new job field...</option>
                 </select>
               </div>
+
+              {newFieldMode && (
+                <div>
+                  <label className={labelClass}>New Job Field Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Information Technology"
+                    value={newFieldName}
+                    onChange={(e) => setNewFieldName(e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+              )}
 
               <div>
                 <label className={labelClass}>Category Name *</label>

@@ -12,8 +12,20 @@ export const getJobById = async (id) => {
   return response.data;
 };
 
+export const getJobsByCompanyId = async (companyId) => {
+  const response = await api.get(`/jobs/company/${companyId}`);
+  return response.data;
+};
+
 export const getAllJobFields = async () => {
   const response = await api.get("/job-fields");
+  return response.data;
+};
+
+export const createJobField = async (payload) => {
+  const response = await api.post("/job-fields", payload, {
+    headers: { "Content-Type": "application/json" },
+  });
   return response.data;
 };
 

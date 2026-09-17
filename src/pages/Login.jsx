@@ -14,6 +14,12 @@ export default function Login() {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const getRedirectPath = (user) => {
+    if (user?.roleId === 1) return "/dashboard";
+    if (user?.roleId === 2) return "/company-dashboard";
+    return "/";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -24,7 +30,7 @@ export default function Login() {
         password: formData.password,
       });
       localStorage.setItem('user', JSON.stringify(user));
-      navigate('/');
+      navigate(getRedirectPath(user));
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid email or password.');
     } finally {

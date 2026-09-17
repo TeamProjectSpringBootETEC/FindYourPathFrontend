@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { getJobById } from "@/service/JobApi";
 import { submitApplication } from "@/service/applicationApi";
+import { getStudentProfileByUserId } from "@/service/studentProfileApi";
+import { createStudentSkill } from "@/service/studentSkillApi";
 import StepIndicator from "@/components/ApplySteps/StepIndicator";
 import CvUploadStep from "@/components/ApplySteps/CvUploadStep";
 import PersonalStep from "@/components/ApplySteps/PersonalStep";
@@ -82,7 +84,24 @@ export default function ApplyJob() {
     if (data.educations?.length) {
       setEducations(data.educations.map((e) => ({ ...emptyEducation, ...e })));
     }
+    if (data.skills?.length) {
+      saveScannedSkills(data.skills);
+    }
     setStep(1);
+  };
+
+  const saveScannedSkills = async (skills) => {
+    try {
+      const profile = await getStudentProfileByUserId(user.id);
+      for (const skill of skills) {
+        const name = String(skill).trim();
+        if (name) {
+          await createStudentSkill(profile.id, { skillName: name }).catch(() => {});
+        }
+      }
+    } catch {
+      // Profile not found — skills simply aren't saved. Form auto-fill still works.
+    }
   };
 
   const handleNext = () => {

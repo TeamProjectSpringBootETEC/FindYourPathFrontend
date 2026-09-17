@@ -33,3 +33,17 @@ export const assessApplication = async (applicationId) => {
   const response = await api.post(`/applications/${applicationId}/assess`);
   return response.data;
 };
+
+export const updateApplicationStatus = async (applicationId, status, changedByUserId) => {
+  const response = await api.post("/application-status-histories", {
+    applicationId,
+    status,
+    changedByUserId,
+  });
+  return response.data;
+};
+
+export const getStatusHistories = async (applicationId) => {
+  const response = await api.get(`/application-status-histories/application/${applicationId}`);
+  return response.data;
+};

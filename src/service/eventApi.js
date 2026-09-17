@@ -10,6 +10,11 @@ export const getEventById = async (id) => {
   return response.data;
 };
 
+export const getEventsByCompanyId = async (companyId) => {
+  const response = await api.get(`/events/company/${companyId}`);
+  return response.data;
+};
+
 export const getAllEventCategories = async () => {
   const response = await api.get("/event-categories");
   return response.data;

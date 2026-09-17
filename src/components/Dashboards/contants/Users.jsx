@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import axios from "axios";
+import api from "@/service/api";
 import {
   Users as UsersIcon,
   Plus,
@@ -24,6 +24,9 @@ import {
 } from "lucide-react";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
+
+const API_BASE_URL = "/v1/users";
+const ROLES_API_URL = "/v1/roles";
 
 const STATUS_COLORS = {
   ACTIVE: "bg-emerald-50 text-emerald-600 border border-emerald-200",
@@ -78,12 +81,12 @@ const Users = () => {
     String(role.id ?? role.role_id ?? role.roleId ?? "");
 
   const getRoleNameFromItem = (role) =>
-    role.role_name || role.name || role.title || `Role #${getRoleIdFromItem(role)}`;
+    role.roleName || role.role_name || role.name || role.title || `Role #${getRoleIdFromItem(role)}`;
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_BASE_URL);
+      const response = await api.get(API_BASE_URL);
       const data = response.data.data || response.data;
       setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -96,15 +99,13 @@ const Users = () => {
 
   const fetchRoles = async () => {
     try {
-      const response = await axios.get(ROLES_API_URL);
+      const response = await api.get(ROLES_API_URL);
       const data = response.data.data || response.data;
       setRoles(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch roles:", err);
     }
-    
-    console.log(response.data);
-};
+  };
 
   const refreshAll = () => {
     fetchUsers();
@@ -257,10 +258,10 @@ const Users = () => {
       if (formData.password) payload.password = formData.password;
 
       if (editingUser) {
-        await axios.put(`${API_BASE_URL}/${editingUser.id}`, payload);
+        await api.put(`${API_BASE_URL}/${editingUser.id}`, payload);
         showToast("User updated successfully.");
       } else {
-        await axios.post(API_BASE_URL, payload);
+        await api.post(API_BASE_URL, payload);
         showToast("User created successfully.");
       }
 
@@ -280,7 +281,7 @@ const Users = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      await axios.delete(`${API_BASE_URL}/${id}`);
+      await api.delete(`${API_BASE_URL}/${id}`);
       setUsers((prev) => prev.filter((item) => item.id !== id));
       setSelectedIds((prev) => prev.filter((x) => x !== id));
       showToast("User deleted.");
@@ -299,7 +300,7 @@ const Users = () => {
 
     try {
       await Promise.all(
-        selectedIds.map((id) => axios.delete(`${API_BASE_URL}/${id}`))
+        selectedIds.map((id) => api.delete(`${API_BASE_URL}/${id}`))
       );
       setUsers((prev) => prev.filter((u) => !selectedIds.includes(u.id)));
       showToast(`${selectedIds.length} user(s) deleted.`);

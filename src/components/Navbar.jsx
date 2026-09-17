@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, LayoutDashboard } from "lucide-react";
 import { getStudentProfileByUserId } from "@/service/studentProfileApi";
 
 function Navbar() {
@@ -70,6 +70,13 @@ function Navbar() {
     setProfileOpen(false);
     navigate("/");
   };
+
+  const role = String(user?.roleName || "").toUpperCase();
+  const dashboardPath = role.includes("ADMIN")
+    ? "/dashboard"
+    : role.includes("COMPANY") || user?.roleId === 2
+      ? "/company-dashboard"
+      : null;
 
   return (
     <nav className="sticky top-0 z-50 flex items-center justify-between border-b border-gray-100 bg-white px-8 py-4 shadow-sm">
@@ -235,6 +242,19 @@ function Navbar() {
                   </p>
                   <p className="truncate text-xs text-gray-500">{user.email}</p>
                 </div>
+
+                {dashboardPath && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileOpen(false);
+                      navigate(dashboardPath);
+                    }}
+                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-blue-600"
+                  >
+                    <LayoutDashboard className="h-4 w-4" /> Dashboard
+                  </button>
+                )}
 
                 <button
                   type="button"

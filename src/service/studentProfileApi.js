@@ -5,6 +5,11 @@ export const getStudentProfileByUserId = async (userId) => {
   return response.data;
 };
 
+export const getStudentProfileById = async (id) => {
+  const response = await api.get(`/student-profile/${id}`);
+  return response.data;
+};
+
 export const createStudentProfile = async (data) => {
   const response = await api.post("/student-profile", data);
   return response.data;

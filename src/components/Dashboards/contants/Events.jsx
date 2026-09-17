@@ -15,6 +15,9 @@ import {
   Tag,
   TrendingUp,
   CalendarOff,
+  ChevronLeft,
+  ChevronRight,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   getAllevent,
@@ -40,6 +43,9 @@ const initialFormState = {
   status: "UPCOMING",
 };
 
+const STATUS_OPTIONS = ["ALL", "UPCOMING", "COMPLETED", "CANCELLED"];
+const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
+
 function Events() {
   const [events, setEvents] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -49,6 +55,9 @@ function Events() {
   const [deletingId, setDeletingId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [editingEvent, setEditingEvent] = useState(null);
   const [formData, setFormData] = useState(initialFormState);
 
@@ -143,11 +152,25 @@ function Events() {
       const title = (e.title || "").toLowerCase();
       const location = (e.location || "").toLowerCase();
       const type = (e.eventType || e.event_type || "").toLowerCase();
-      return (
-        title.includes(q) || location.includes(q) || type.includes(q)
-      );
+      const matchesSearch =
+        title.includes(q) || location.includes(q) || type.includes(q);
+      const matchesStatus =
+        statusFilter === "ALL" ||
+        String(e.status || "").toUpperCase() === statusFilter;
+      return matchesSearch && matchesStatus;
     });
-  }, [events, searchQuery]);
+  }, [events, searchQuery, statusFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredEvents.length / rowsPerPage));
+  const safePage = Math.min(page, totalPages);
+  const pagedEvents = filteredEvents.slice(
+    (safePage - 1) * rowsPerPage,
+    safePage * rowsPerPage
+  );
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -282,6 +305,26 @@ function Events() {
               />
             </div>
 
+            <div className="relative">
+              <button
+                type="button"
+                className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              >
+                <SlidersHorizontal size={13} />
+                {statusFilter === "ALL" ? "All Statuses" : statusFilter}
+              </button>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+                aria-label="Filter by status"
+              >
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+
             <button
               onClick={() => {
                 fetchEvents();
@@ -387,11 +430,11 @@ function Events() {
                 ) : filteredEvents.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="py-16 text-center text-slate-400">
-                      No events found matching your query.
+                      No events found matching your filters.
                     </td>
                   </tr>
                 ) : (
-                  filteredEvents.map((event) => (
+                  pagedEvents.map((event) => (
                     <tr
                       key={event.id}
                       className="hover:bg-slate-50/60 transition-colors group"
@@ -482,6 +525,67 @@ function Events() {
               </tbody>
             </table>
           </div>
+          {filteredEvents.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-3 border-t border-slate-100 bg-slate-50/50">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span>Show</span>
+                <select
+                  value={rowsPerPage}
+                  onChange={(e) => {
+                    setRowsPerPage(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                >
+                  {ROWS_PER_PAGE_OPTIONS.map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+                <span>
+                  {filteredEvents.length === 0
+                    ? "0 entries"
+                    : `${(safePage - 1) * rowsPerPage + 1}-${Math.min(
+                        safePage * rowsPerPage,
+                        filteredEvents.length
+                      )} of ${filteredEvents.length} entries`}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setPage(Math.max(1, safePage - 1))}
+                  disabled={safePage <= 1}
+                  className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500"
+                  title="Previous page"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (num) => (
+                    <button
+                      key={num}
+                      onClick={() => setPage(num)}
+                      className={`w-8 h-8 rounded-lg text-xs font-semibold transition ${
+                        num === safePage
+                          ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                          : "text-slate-500 hover:bg-slate-100"
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  )
+                )}
+                <button
+                  onClick={() => setPage(Math.min(totalPages, safePage + 1))}
+                  disabled={safePage >= totalPages}
+                  className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-500"
+                  title="Next page"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

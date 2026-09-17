@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import axios from "axios";
 import {
   Building2,
   Plus,
@@ -22,10 +21,16 @@ import {
   Building,
   SlidersHorizontal,
 } from "lucide-react";
-
-const API_BASE_URL = "http://localhost:8089/api/companies";
-const USERS_API_URL = "http://localhost:8089/api/v1/users";
-const JOBS_API_URL = "http://localhost:8089/api/jobs";
+import {
+  getAllCompanies,
+  createCompany,
+  updateCompany,
+  deleteCompany,
+  uploadCompanyLogo,
+  deleteCompanyLogo,
+} from "@/service/CompanyApi";
+import { getAllUsers } from "@/service/userApi";
+import { getAllJob } from "@/service/JobApi";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
@@ -70,10 +75,8 @@ function Company() {
   const fetchCompanies = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_BASE_URL);
-      const data = response.data.data || response.data;
-
-      console.log(response.data)
+      const response = await getAllCompanies();
+      const data = response.data || response;
       setCompanies(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch companies:", err);
@@ -85,8 +88,8 @@ function Company() {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(USERS_API_URL);
-      const data = response.data.data || response.data;
+      const response = await getAllUsers();
+      const data = response.data || response;
       setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch users:", err);
@@ -95,8 +98,8 @@ function Company() {
 
   const fetchJobs = async () => {
     try {
-      const response = await axios.get(JOBS_API_URL);
-      const data = response.data.data || response.data;
+      const response = await getAllJob();
+      const data = response.data || response;
       setJobs(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch jobs:", err);
@@ -131,9 +134,7 @@ function Company() {
   const getUserId = (c) => c.userId || c.user_id;
 
   const uploadLogoToBackend = async (companyId, file) => {
-    const logoFormData = new FormData();
-    logoFormData.append("logo", file);
-    await axios.post(`${API_BASE_URL}/${companyId}/logo`, logoFormData);
+    await uploadCompanyLogo(companyId, file);
   };
 
   // Per-company job counts (from real jobs data)
@@ -307,12 +308,12 @@ function Company() {
         userId: Number(formData.userId),
       };
 
-      const response = editingCompany
-        ? await axios.put(`${API_BASE_URL}/${editingCompany.id}`, payload)
-        : await axios.post(API_BASE_URL, payload);
+      const saved = editingCompany
+        ? await updateCompany(editingCompany.id, payload)
+        : await createCompany(payload);
 
-      const saved = response.data.data || response.data;
-      const savedId = saved?.id ?? editingCompany?.id;
+      const savedData = saved.data || saved;
+      const savedId = savedData?.id ?? editingCompany?.id;
 
       if (logoFile && savedId != null) {
         await uploadLogoToBackend(savedId, logoFile);
@@ -335,7 +336,7 @@ function Company() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this company?")) return;
     try {
-      await axios.delete(`${API_BASE_URL}/${id}`);
+      await deleteCompany(id);
       setCompanies((prev) => prev.filter((item) => item.id !== id));
       setSelectedIds((prev) => prev.filter((x) => x !== id));
       showToast("Company deleted.");
@@ -351,7 +352,7 @@ function Company() {
 
     try {
       await Promise.all(
-        selectedIds.map((id) => axios.delete(`${API_BASE_URL}/${id}`))
+        selectedIds.map((id) => deleteCompany(id))
       );
       setCompanies((prev) => prev.filter((c) => !selectedIds.includes(c.id)));
       showToast(`${selectedIds.length} company(ies) deleted.`);
@@ -367,7 +368,7 @@ function Company() {
     if (!window.confirm("Remove company logo?")) return;
 
     try {
-      await axios.delete(`${API_BASE_URL}/${company.id}/logo`);
+      await deleteCompanyLogo(company.id);
       fetchCompanies();
       showToast("Company logo removed.");
     } catch (err) {

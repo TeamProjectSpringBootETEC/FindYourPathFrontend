@@ -1,10 +1,11 @@
 import React from "react";
-import { GraduationCap, Briefcase, School, FileText, Settings } from "lucide-react";
+import { GraduationCap, Briefcase, School, FileText, Settings, Sparkles } from "lucide-react";
 
 const items = [
   { id: "personal", label: "Personal & Academic", icon: GraduationCap },
   { id: "experience", label: "Work Experiences", icon: Briefcase },
   { id: "education", label: "Education History", icon: School },
+  { id: "skills", label: "My Skills", icon: Sparkles },
   { id: "applications", label: "My Applications", icon: FileText },
   { id: "account", label: "Account Settings", icon: Settings },
 ];
