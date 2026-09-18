@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Briefcase, Loader2, Inbox } from "lucide-react";
+import { Briefcase, Loader2, Inbox, FileDown } from "lucide-react";
 import { useCompany } from "../CompanyLayout";
 import NoCompanyNotice from "../NoCompanyNotice";
 import { getJobsByCompanyId } from "@/service/JobApi";
 import { getApplicationsByJob } from "@/service/applicationApi";
 import { applicationBadge, formatDate } from "../helpers";
-import CandidateDrawer from "./CandidateDrawer";
+import CandidateDetailModal from "./CandidateDetailModal";
 
 export default function ApplicantList() {
   const { companyId, company } = useCompany();
@@ -133,6 +133,7 @@ export default function ApplicantList() {
                   <th className="py-3 px-6">Candidate</th>
                   <th className="py-3 px-6">GPA</th>
                   <th className="py-3 px-6">Applied Date</th>
+                  <th className="py-3 px-6">CV</th>
                   <th className="py-3 px-6">Status</th>
                   <th className="py-3 px-6 text-right">Action</th>
                 </tr>
@@ -162,6 +163,22 @@ export default function ApplicantList() {
                       {formatDate(app.appliedAt)}
                     </td>
                     <td className="py-3.5 px-6">
+                      {app.cvUrl ? (
+                        <a
+                          href={app.cvUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700"
+                          title="Download CV"
+                        >
+                          <FileDown className="w-3.5 h-3.5" /> CV
+                        </a>
+                      ) : (
+                        <span className="text-slate-300">—</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-6">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold capitalize ${applicationBadge(app.status)}`}
                       >
@@ -182,7 +199,7 @@ export default function ApplicantList() {
       </div>
 
       {selectedApp && (
-        <CandidateDrawer
+        <CandidateDetailModal
           app={selectedApp}
           onClose={() => setSelectedApp(null)}
           onStatusUpdated={(newApp) => {

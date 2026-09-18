@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, FileText, Info, Loader2 } from "lucide-react";
 import { getJobById } from "@/service/JobApi";
-import { submitApplication } from "@/service/applicationApi";
+import { submitApplicationWithCv } from "@/service/applicationApi";
 import { getStudentProfileByUserId } from "@/service/studentProfileApi";
 import { createStudentSkill } from "@/service/studentSkillApi";
 import StepIndicator from "@/components/ApplySteps/StepIndicator";
@@ -33,6 +33,7 @@ export default function ApplyJob() {
   });
   const [experiences, setExperiences] = useState([emptyExperience]);
   const [educations, setEducations] = useState([emptyEducation]);
+  const [cvFile, setCvFile] = useState(null);
 
   useEffect(() => {
     getJobById(id)
@@ -147,7 +148,7 @@ export default function ApplyJob() {
 
     try {
       setSubmitting(true);
-      await submitApplication(id, payload);
+      await submitApplicationWithCv(id, payload, cvFile);
       navigate("/apply-success", { replace: true });
     } catch (err) {
       setErrors({ submit: err.response?.data?.message || "Failed to submit your application. Please try again." });
@@ -188,7 +189,7 @@ export default function ApplyJob() {
 
           <div className="p-6 md:p-8">
             {step === 0 && (
-              <CvUploadStep onScanned={handleCvScanned} onSkip={() => setStep(1)} />
+              <CvUploadStep onScanned={handleCvScanned} onSkip={() => setStep(1)} onFileSelected={setCvFile} />
             )}
             {step === 1 && (
               <PersonalStep
@@ -212,6 +213,24 @@ export default function ApplyJob() {
                 onAdd={() => setEducations((rows) => [...rows, emptyEducation])}
                 onRemove={(index) => setEducations((rows) => rows.filter((_, i) => i !== index))}
               />
+            )}
+          </div>
+
+          <div className="border-t border-gray-100 px-6 py-4 flex items-center gap-2">
+            {cvFile ? (
+              <>
+                <FileText className="w-4 h-4 text-green-600 shrink-0" />
+                <p className="text-xs text-green-700 font-medium">
+                  CV attached: {cvFile.name} — the company will receive this CV with your application.
+                </p>
+              </>
+            ) : (
+              <>
+                <Info className="w-4 h-4 text-amber-500 shrink-0" />
+                <p className="text-xs text-amber-700 font-medium">
+                  No CV uploaded. You can still apply, but the company won't be able to download your CV. You can upload one on step 1.
+                </p>
+              </>
             )}
           </div>
 

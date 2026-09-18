@@ -15,6 +15,7 @@ import EventCategory from "@/components/Dashboards/contants/EventCategory";
 import ApplyJob from "@/pages/ApplyJob";
 import ApplySuccess from "@/pages/ApplySuccess";
 import StudentDashboard from "@/pages/StudentDashboard";
+import StudentProfileView from "@/pages/StudentProfileView";
 import Register from "@/pages/Register";
 import Login from "@/pages/Login";
 import Company from "@/components/Dashboards/contants/Company";
@@ -128,6 +129,7 @@ function RouteApp() {
         <Route path="/companies" element={<h1 className="p-4 text-2xl font-bold">Companies Page</h1>} />
         <Route path="/about" element={<AboutUs/>} />
         <Route path="/profile" element={<StudentDashboard />} />
+        <Route path="/student/:id" element={<StudentProfileView />} />
       </Route>
 
       {/* Auth Pages -> No Navbar / Footer */}

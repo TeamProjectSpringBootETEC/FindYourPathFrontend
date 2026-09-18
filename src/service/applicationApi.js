@@ -9,8 +9,17 @@ export const scanCv = async (file) => {
   return response.data;
 };
 
-export const submitApplication = async (jobId, data) => {
-  const response = await api.post(`/applications/${jobId}`, data);
+export const submitApplicationWithCv = async (jobId, data, file) => {
+  const formData = new FormData();
+  formData.append(
+    "application",
+    new Blob([JSON.stringify(data)], { type: "application/json" }),
+    "application.json"
+  );
+  if (file) formData.append("file", file);
+  const response = await api.post(`/applications/${jobId}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return response.data;
 };
 

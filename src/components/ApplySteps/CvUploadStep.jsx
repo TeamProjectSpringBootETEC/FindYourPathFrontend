@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { UploadCloud, FileText, Sparkles, Loader2, ArrowRight } from "lucide-react";
 import { scanCv } from "@/service/applicationApi";
 
-export default function CvUploadStep({ onScanned, onSkip }) {
+export default function CvUploadStep({ onScanned, onSkip, onFileSelected }) {
   const inputRef = useRef(null);
   const [file, setFile] = useState(null);
   const [scanning, setScanning] = useState(false);
@@ -12,6 +12,7 @@ export default function CvUploadStep({ onScanned, onSkip }) {
     const picked = e.target.files?.[0] || null;
     setFile(picked);
     setStatus(null);
+    onFileSelected?.(picked);
   };
 
   const handleScan = async () => {
