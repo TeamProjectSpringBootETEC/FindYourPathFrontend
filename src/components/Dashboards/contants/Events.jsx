@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CalendarDays,
   Plus,
@@ -37,20 +38,23 @@ const initialFormState = {
   description: "",
   companyId: "",
   categoryId: "",
-  eventType: "",
+  eventType: "In-person",
   eventDate: "",
   startTime: "",
   endTime: "",
   location: "",
   registrationDeadline: "",
   maxParticipants: "",
+  fee: "",
   status: "UPCOMING",
 };
 
 const STATUS_OPTIONS = ["ALL", "UPCOMING", "COMPLETED", "CANCELLED"];
+const FORMAT_OPTIONS = ["In-person", "Virtual", "Hybrid"];
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
 function Events() {
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [categories, setCategories] = useState([]);
   const [companies, setCompanies] = useState([]);
@@ -223,6 +227,7 @@ function Events() {
       maxParticipants: String(
         event.maxParticipants || event.max_participants || ""
       ),
+      fee: event.fee != null ? String(event.fee) : "",
       status: event.status || "UPCOMING",
     });
     setExistingImages(getEventImages(event));
@@ -305,6 +310,9 @@ function Events() {
       maxParticipants: formData.maxParticipants
         ? Number(formData.maxParticipants)
         : null,
+      fee: formData.fee !== "" && formData.fee != null
+        ? Number(formData.fee)
+        : 0,
       status: formData.status,
     };
 
@@ -597,6 +605,13 @@ function Events() {
                       <td className="py-4 px-6 text-right">
                         <div className="flex items-center justify-end gap-1">
                           <button
+                            onClick={() => navigate(`/dashboard/events/${event.id}/participants`)}
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition"
+                            title="View Registered Candidates"
+                          >
+                            <Users className="w-4 h-4" />
+                          </button>
+                          <button
                             onClick={() => openEditModal(event)}
                             className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition"
                             title="Edit Event"
@@ -762,14 +777,23 @@ function Events() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>Event Type</label>
-                  <input
-                    type="text"
+                  <select
                     name="eventType"
                     value={formData.eventType}
                     onChange={handleInputChange}
                     className={inputClass}
-                    placeholder="e.g. Career Fair, Workshop"
-                  />
+                  >
+                    <option value="">Select event type</option>
+                    {FORMAT_OPTIONS.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                    {formData.eventType &&
+                      !FORMAT_OPTIONS.includes(formData.eventType) && (
+                        <option value={formData.eventType}>
+                          {formData.eventType}
+                        </option>
+                      )}
+                  </select>
                 </div>
 
                 <div>
@@ -818,7 +842,7 @@ function Events() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div>
                   <label className={labelClass}>Registration Deadline</label>
                   <input
@@ -839,6 +863,19 @@ function Events() {
                     onChange={handleInputChange}
                     className={inputClass}
                     placeholder="e.g. 200"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Fee (USD, 0 = Free)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    name="fee"
+                    value={formData.fee}
+                    onChange={handleInputChange}
+                    className={inputClass}
+                    placeholder="e.g. 10.00"
                   />
                 </div>
                 <div>

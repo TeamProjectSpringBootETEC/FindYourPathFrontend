@@ -1,5 +1,5 @@
 import React from "react";
-import { GraduationCap, Briefcase, School, FileText, Settings, Sparkles } from "lucide-react";
+import { GraduationCap, Briefcase, School, FileText, Settings, Sparkles, Bookmark, CalendarDays } from "lucide-react";
 
 const items = [
   { id: "personal", label: "Personal & Academic", icon: GraduationCap },
@@ -7,6 +7,8 @@ const items = [
   { id: "education", label: "Education History", icon: School },
   { id: "skills", label: "My Skills", icon: Sparkles },
   { id: "applications", label: "My Applications", icon: FileText },
+  { id: "saved-jobs", label: "Saved Jobs", icon: Bookmark },
+  { id: "saved-events", label: "Saved Events", icon: CalendarDays },
   { id: "account", label: "Account Settings", icon: Settings },
 ];
 

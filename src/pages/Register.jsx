@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { User, Mail, Lock } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { User, Mail, Lock, CheckCircle } from 'lucide-react';
 import { registerUser } from '@/service/authApi';
 
 export default function Register() {
   const navigate = useNavigate();
   const [accountType, setAccountType] = useState('Candidate');
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -30,13 +31,14 @@ export default function Register() {
     try {
       setSubmitting(true);
       await registerUser({
-        roleId: accountType === 'Employer' ? 2 : 1,
+        roleId: accountType === 'Employer' ? 2 : 3,
         name: formData.fullName,
         email: formData.email,
         password: formData.password,
         status: 'ACTIVE',
       });
-      navigate('/login');
+      setSuccess(`Account created successfully! Redirecting you to sign in...`);
+      setTimeout(() => navigate('/login', { state: { registered: true, email: formData.email } }), 1500);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
@@ -60,27 +62,17 @@ export default function Register() {
           </p>
         </div>
 
-        {/* Role Toggle Selector */}
-        <div className="bg-gray-100/80 p-1.5 rounded-2xl flex items-center">
-          {['Candidate', 'Employer'].map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => setAccountType(type)}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                accountType === type
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-800'
-              }`}
-            >
-              {type}
-            </button>
-          ))}
-        </div>
-
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
           
+          {/* Success Message */}
+          {success && (
+            <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3 flex items-start gap-2">
+              <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              {success}
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
@@ -219,6 +211,14 @@ export default function Register() {
           </button>
 
         </div>
+
+        {/* Switch to Login */}
+        <p className="mt-6 text-center text-sm text-gray-500">
+          Already have an account?{' '}
+          <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
+            Log in
+          </Link>
+        </p>
 
       </div>
 

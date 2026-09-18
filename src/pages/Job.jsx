@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getAllJob, getAllJobFields, getAllJobCategories } from '@/service/JobApi';
+import { getSavedJobsByStudent, createSavedJob, deleteSavedJob } from '@/service/savedJobApi';
+import { getCurrentUser } from '@/service/session';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -58,6 +60,29 @@ export default function Job() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const navigate = useNavigate();
+
+  const [savedMap, setSavedMap] = useState({});
+  const [savingId, setSavingId] = useState(null);
+
+  useEffect(() => {
+    const loadSaved = async () => {
+      const user = getCurrentUser();
+      if (!user) return;
+      try {
+        const data = await getSavedJobsByStudent(user.id);
+        const map = {};
+        (Array.isArray(data) ? data : data?.data || []).forEach((rec) => {
+          map[rec.jobId] = rec.id;
+        });
+        setSavedMap(map);
+      } catch (err) {
+        console.error('Failed to load saved jobs:', err);
+      }
+    };
+    loadSaved();
+  }, []);
+
   useEffect(() => {
     const fetchJobs = async () => {
       try {
@@ -65,7 +90,7 @@ export default function Job() {
         const data = await getAllJob();
         setJobs(data);
       } catch (error) {
-        setError("Failed to load jobs");
+        setError('Failed to load jobs');
       } finally {
         setLoading(false);
       }
@@ -86,10 +111,35 @@ export default function Job() {
     fetchFilters();
   }, []);
 
-  const toggleBookmark = (id) => {
-    setJobs((prev) =>
-      prev.map((job) => (job.id === id ? { ...job, isBookmarked: !job.isBookmarked } : job))
-    );
+  const toggleSave = async (job) => {
+    const user = getCurrentUser();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (savingId === job.id) return;
+    setSavingId(job.id);
+    try {
+      const savedId = savedMap[job.id];
+      if (savedId) {
+        await deleteSavedJob(savedId);
+        setSavedMap((prev) => {
+          const next = { ...prev };
+          delete next[job.id];
+          return next;
+        });
+      } else {
+        const created = await createSavedJob({ studentId: user.id, jobId: job.id });
+        const createdData = created?.data || created;
+        setSavedMap((prev) => ({ ...prev, [job.id]: createdData?.id ?? createdData?.savedJobId ?? job.id }));
+      }
+    } catch (err) {
+      console.error('Failed to save job:', err);
+      const backendMessage = err.response?.data?.message || err.message;
+      alert(`Save failed: ${backendMessage}`);
+    } finally {
+      setSavingId(null);
+    }
   };
 
   const handleApplyFilters = () => {
@@ -222,8 +272,6 @@ export default function Job() {
     return pages;
   };
 
-
-  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -483,10 +531,12 @@ export default function Job() {
                     <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-4 shrink-0">
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={() => toggleBookmark(job.id)}
-                          className="text-gray-400 hover:text-blue-600 transition-colors p-1"
+                          onClick={() => toggleSave(job)}
+                          disabled={savingId === job.id}
+                          className="text-gray-400 hover:text-blue-600 transition-colors p-1 disabled:opacity-50"
+                          title={savedMap[job.id] ? 'Remove from saved jobs' : 'Save job'}
                         >
-                          {job.isBookmarked ? (
+                          {savedMap[job.id] ? (
                             <BookmarkCheck className="w-5 h-5 text-purple-600 fill-purple-600" />
                           ) : (
                             <Bookmark className="w-5 h-5" />

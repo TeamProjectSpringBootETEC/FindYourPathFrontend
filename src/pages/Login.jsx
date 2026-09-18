@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle } from 'lucide-react';
 import { loginUser } from '@/service/authApi';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const registeredNotice = location.state?.registered ? `Account created successfully! Please sign in with your new credentials.` : null;
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -57,6 +59,14 @@ export default function Login() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           
+          {/* Success Notice from Register */}
+          {registeredNotice && (
+            <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3 flex items-start gap-2">
+              <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              {registeredNotice}
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
@@ -178,6 +188,14 @@ export default function Login() {
           </button>
 
         </div>
+
+        {/* Switch to Register */}
+        <p className="mt-6 text-center text-sm text-gray-500">
+          Don't have an account?{' '}
+          <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-700 hover:underline">
+            Sign up
+          </Link>
+        </p>
 
       </div>
 

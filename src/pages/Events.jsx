@@ -7,11 +7,19 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
-  ArrowRight
+  ArrowRight,
+  Bookmark,
+  BookmarkCheck,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SORT_OPTIONS } from '@/data/events';
-import { getAllevent } from '@/service/eventApi';
+import { getAllevent, getAllEventCategories } from '@/service/eventApi';
+import {
+  getRegistrationsByUserId,
+  cancelRegistration,
+} from '@/service/eventRegistrationApi';
+import { getCurrentUser } from '@/service/session';
+import EventRegistrationModal from '@/components/EventRegistrationModal';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -61,7 +69,9 @@ const mapEvent = (item) => {
     format: item.eventType,
     formatKey,
     categoryKey,
-    payment: 'Free',
+    categoryId: item.categoryId ?? item.category_id ?? item.category?.id ?? null,
+    fee: Number(item.fee || 0),
+    payment: Number(item.fee || 0) > 0 ? `$${Number(item.fee).toFixed(2)}` : 'Free',
     tags: [item.categoryName, item.eventType, item.companyName].filter(Boolean),
     featured: false,
     isBookmarked: false,
@@ -80,17 +90,74 @@ export default function Events() {
     virtual: false,
     hybrid: false,
   });
-  const [categories, setCategories] = useState({
-    careerFair: false,
-    workshop: false,
-    seminar: false,
-    networking: false,
-  });
+  const [categories, setCategories] = useState({});
+  const [categoryOptions, setCategoryOptions] = useState([]);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [sortBy, setSortBy] = useState('upcoming');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [registeredMap, setRegisteredMap] = useState({});
+  const [registeringId, setRegisteringId] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
+  useEffect(() => {
+    const loadRegistrations = async () => {
+      const user = getCurrentUser();
+      if (!user) return;
+      try {
+        const data = await getRegistrationsByUserId(user.id);
+        const map = {};
+        (Array.isArray(data) ? data : data?.data || []).forEach((rec) => {
+          map[rec.eventId] = rec.id;
+        });
+        setRegisteredMap(map);
+      } catch (err) {
+        console.error('Failed to load registrations:', err);
+      }
+    };
+    loadRegistrations();
+  }, []);
+
+  const toggleRegister = async (eventId) => {
+    const user = getCurrentUser();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    const recordId = registeredMap[eventId];
+    if (recordId) {
+      if (!window.confirm('Cancel your registration for this event?')) return;
+      if (registeringId === eventId) return;
+      setRegisteringId(eventId);
+      try {
+        await cancelRegistration(recordId);
+        setRegisteredMap((prev) => {
+          const next = { ...prev };
+          delete next[eventId];
+          return next;
+        });
+      } catch (err) {
+        console.error('Failed to cancel registration:', err);
+        alert(err.response?.data?.message || 'Failed to cancel registration.');
+      } finally {
+        setRegisteringId(null);
+      }
+      return;
+    }
+    const target = events.find((ev) => ev.id === eventId);
+    if (target) {
+      setSelectedEvent(target);
+    }
+  };
+
+  const handleRegistered = (registration) => {
+    const data = registration?.data || registration;
+    if (data && data.eventId) {
+      setRegisteredMap((prev) => ({ ...prev, [data.eventId]: data.id }));
+    }
+    setSelectedEvent(null);
+  };
 
   const filteredEvents = useMemo(() => {
     let result = [...events];
@@ -116,9 +183,13 @@ export default function Events() {
 
     const activeCategories = Object.entries(categories)
       .filter(([, v]) => v)
-      .map(([k]) => k);
+      .map(([k]) => String(k));
     if (activeCategories.length > 0) {
-      result = result.filter((event) => activeCategories.includes(event.categoryKey));
+      result = result.filter(
+        (event) =>
+          event.categoryId != null &&
+          activeCategories.includes(String(event.categoryId))
+      );
     }
 
     if (dateFrom) {
@@ -178,7 +249,7 @@ export default function Events() {
   const handleClearAll = () => {
     setSearch('');
     setEventTypes({ inPerson: false, virtual: false, hybrid: false });
-    setCategories({ careerFair: false, workshop: false, seminar: false, networking: false });
+    setCategories({});
     setDateFrom('');
     setDateTo('');
     setSortBy('upcoming');
@@ -195,9 +266,15 @@ export default function Events() {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const data = await getAllevent();
+        const [data, cats] = await Promise.all([
+          getAllevent(),
+          getAllEventCategories().catch(() => []),
+        ]);
         console.log(data)
         setEvents(data.map(mapEvent));
+        setCategoryOptions(
+          Array.isArray(cats) ? cats : cats.data || []
+        );
       } catch (err) {
         setError("Failed to load events");
       } finally {
@@ -298,24 +375,23 @@ export default function Events() {
               {/* Category Checkboxes */}
               <div className="space-y-3">
                 <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Category</label>
-                <div className="space-y-2.5 text-sm">
-                  {[
-                    { key: 'careerFair', label: 'Career Fair' },
-                    { key: 'workshop', label: 'Workshop' },
-                    { key: 'seminar', label: 'Seminar' },
-                    { key: 'networking', label: 'Networking' },
-                  ].map((cat) => (
-                    <label key={cat.key} className="flex items-center gap-3 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={categories[cat.key]}
-                        onChange={() => setCategories({...categories, [cat.key]: !categories[cat.key]})}
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-gray-700 group-hover:text-gray-900 text-sm">{cat.label}</span>
-                    </label>
-                  ))}
-                </div>
+                {categoryOptions.length === 0 ? (
+                  <p className="text-xs text-gray-400">No categories available.</p>
+                ) : (
+                  <div className="space-y-2.5 text-sm">
+                    {categoryOptions.map((cat) => (
+                      <label key={cat.id} className="flex items-center gap-3 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={!!categories[cat.id]}
+                          onChange={() => setCategories({...categories, [cat.id]: !categories[cat.id]})}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-gray-700 group-hover:text-gray-900 text-sm">{cat.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Date Range Inputs */}
@@ -438,11 +514,33 @@ export default function Events() {
                       </div>
                     )}
                     {/* Event Type Badge Overlay */}
-                    <div className="absolute top-3 left-3">
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
                       <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md shadow-sm ${event.typeBadgeColor}`}>
                         {event.type}
                       </span>
+                      {event.fee > 0 ? (
+                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-md shadow-sm bg-amber-500 text-white">
+                          ${event.fee.toFixed(2)}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-md shadow-sm bg-emerald-500 text-white">
+                          FREE
+                        </span>
+                      )}
                     </div>
+                    {/* Save / Register Overlay */}
+                    <button
+                      onClick={() => toggleRegister(event.id)}
+                      disabled={registeringId === event.id}
+                      className="absolute top-3 right-3 w-9 h-9 rounded-lg bg-white/90 backdrop-blur-sm shadow-sm border border-gray-200 flex items-center justify-center text-gray-500 hover:text-purple-600 transition-colors disabled:opacity-50"
+                      title={registeredMap[event.id] ? 'Cancel registration' : 'Save / register for event'}
+                    >
+                      {registeredMap[event.id] ? (
+                        <BookmarkCheck className="w-4 h-4 text-purple-600 fill-purple-600" />
+                      ) : (
+                        <Bookmark className="w-4 h-4" />
+                      )}
+                    </button>
                   </div>
 
                   {/* Card Content Body */}
@@ -542,6 +640,15 @@ export default function Events() {
           <Plus className="w-6 h-6" />
         </button>
       </div>
+
+      {selectedEvent && (
+        <EventRegistrationModal
+          event={selectedEvent}
+          user={getCurrentUser()}
+          onClose={() => setSelectedEvent(null)}
+          onRegistered={handleRegistered}
+        />
+      )}
 
     </div>
   );

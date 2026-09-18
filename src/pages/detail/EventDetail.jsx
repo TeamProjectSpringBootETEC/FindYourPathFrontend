@@ -17,6 +17,12 @@ import {
 } from 'lucide-react';
 import { CATEGORY_OPTIONS, FORMAT_OPTIONS } from '@/data/events';
 import { getEventById } from '@/service/eventApi';
+import {
+  getRegistrationsByUserId,
+  cancelRegistration,
+} from '@/service/eventRegistrationApi';
+import { getCurrentUser } from '@/service/session';
+import EventRegistrationModal from '@/components/EventRegistrationModal';
 
 const getFormatKey = (eventType = '') => {
   const type = eventType.toLowerCase();
@@ -44,7 +50,8 @@ const mapEvent = (item) => ({
   date: item.eventDate ? `${item.eventDate}T${item.startTime || '00:00:00'}` : '',
   location: item.location,
   organization: item.companyName,
-  payment: 'Free',
+  fee: Number(item.fee || 0),
+  payment: Number(item.fee || 0) > 0 ? `$${Number(item.fee).toFixed(2)}` : 'Free',
   tags: [item.categoryName, item.eventType, item.companyName].filter(Boolean),
   featured: false,
   isBookmarked: false,
@@ -83,7 +90,10 @@ export default function EventDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [registrationId, setRegistrationId] = useState(null);
+  const [registering, setRegistering] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -92,6 +102,21 @@ export default function EventDetail() {
         const data = await getEventById(id);
         setEvent(mapEvent(data));
         setActiveImageIndex(0);
+
+        const user = getCurrentUser();
+        if (user) {
+          try {
+            const regs = await getRegistrationsByUserId(user.id);
+            const list = Array.isArray(regs) ? regs : regs?.data || [];
+            const rec = list.find((r) => Number(r.eventId) === Number(id));
+            if (rec) {
+              setRegistrationId(rec.id);
+              setIsSaved(true);
+            }
+          } catch (err) {
+            console.error('Failed to load registration state:', err);
+          }
+        }
       } catch (err) {
         setError(true);
       } finally {
@@ -100,6 +125,38 @@ export default function EventDetail() {
     };
     fetchEvent();
   }, [id]);
+
+  const handleRegisterClick = () => {
+    const user = getCurrentUser();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (isSaved) {
+      if (!window.confirm('Cancel your registration for this event?')) return;
+      if (registering) return;
+      setRegistering(true);
+      cancelRegistration(registrationId)
+        .then(() => {
+          setRegistrationId(null);
+          setIsSaved(false);
+        })
+        .catch((err) => {
+          console.error('Failed to cancel registration:', err);
+          alert(err.response?.data?.message || 'Failed to cancel registration.');
+        })
+        .finally(() => setRegistering(false));
+      return;
+    }
+    setShowRegisterModal(true);
+  };
+
+  const handleRegistered = (registration) => {
+    const data = registration?.data || registration;
+    setRegistrationId(data?.id ?? data?.registrationId ?? null);
+    setIsSaved(true);
+    setShowRegisterModal(false);
+  };
 
   if (loading) {
     return (
@@ -200,8 +257,10 @@ export default function EventDetail() {
                 <Share2 className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setIsSaved(!isSaved)}
-                className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:border-gray-300 hover:text-blue-600 transition-colors shadow-sm"
+                onClick={handleRegisterClick}
+                disabled={registering}
+                className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:border-gray-300 hover:text-blue-600 transition-colors shadow-sm disabled:opacity-50"
+                title={isSaved ? 'Registered — click to cancel' : 'Register for event'}
               >
                 {isSaved ? (
                   <BookmarkCheck className="w-5 h-5 text-purple-600 fill-purple-600" />
@@ -350,14 +409,25 @@ export default function EventDetail() {
 
             {/* Top Action Buttons Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-3">
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors shadow-sm shadow-blue-200">
-                Register Now
+              <button
+                onClick={handleRegisterClick}
+                disabled={registering}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors shadow-sm shadow-blue-200 disabled:opacity-50"
+              >
+                {registering
+                  ? 'Please wait...'
+                  : isSaved
+                  ? 'Registered — Click to Cancel'
+                  : event.fee > 0
+                  ? 'Register Now'
+                  : 'Register Now (Free)'}
               </button>
               <button
-                onClick={() => setIsSaved(!isSaved)}
-                className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-3 rounded-xl font-semibold text-sm transition-colors"
+                onClick={handleRegisterClick}
+                disabled={registering}
+                className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-3 rounded-xl font-semibold text-sm transition-colors disabled:opacity-50"
               >
-                {isSaved ? 'Saved' : 'Save Event'}
+                {isSaved ? 'Remove from Saved Events' : 'Save Event'}
               </button>
             </div>
 
@@ -423,6 +493,15 @@ export default function EventDetail() {
         </div>
 
       </div>
+
+      {showRegisterModal && (
+        <EventRegistrationModal
+          event={event}
+          user={getCurrentUser()}
+          onClose={() => setShowRegisterModal(false)}
+          onRegistered={handleRegistered}
+        />
+      )}
     </div>
   );
 }

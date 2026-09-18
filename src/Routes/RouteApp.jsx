@@ -32,6 +32,8 @@ import CompanyProfile from "@/components/CompanyDashboard/profile/CompanyProfile
 import JobList from "@/components/CompanyDashboard/jobs/JobList";
 import ApplicantList from "@/components/CompanyDashboard/applicants/ApplicantList";
 import EventList from "@/components/CompanyDashboard/events/EventList";
+import EventParticipants from "@/pages/EventParticipants";
+import TicketCheckIn from "@/pages/TicketCheckIn";
 import { Menu } from "lucide-react"; 
 import RequireRole from "@/components/RequireRole"; 
 
@@ -122,6 +124,7 @@ function RouteApp() {
         <Route path="/apply-success" element={<ApplySuccess />} />
         <Route path="/events" element={<Events/>} />
         <Route path="/event/:id" element={<EventDetail />} />
+        <Route path="/ticket/:ticketCode" element={<TicketCheckIn />} />
         <Route path="/companies" element={<h1 className="p-4 text-2xl font-bold">Companies Page</h1>} />
         <Route path="/about" element={<AboutUs/>} />
         <Route path="/profile" element={<StudentDashboard />} />
@@ -139,6 +142,7 @@ function RouteApp() {
         <Route path="jobs" element={<Jobs/>} />
         <Route path="categories" element={<CategoryJob/>} />
         <Route path="events" element={<AdminEvents/>} />
+        <Route path="events/:eventId/participants" element={<EventParticipants />} />
         <Route path="event-categories" element={<EventCategory/>} />
         <Route path="scholarships" element={<Scholarships/>} />
         <Route path="applications" element={<Applications/>} />
@@ -154,6 +158,7 @@ function RouteApp() {
         <Route path="jobs" element={<JobList />} />
         <Route path="applicants" element={<ApplicantList />} />
         <Route path="events" element={<EventList />} />
+        <Route path="events/:eventId/participants" element={<EventParticipants />} />
         <Route path="categories" element={<CategoryJob />} />
       </Route>
     </Routes>

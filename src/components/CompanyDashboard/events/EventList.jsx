@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Plus,
   Search,
@@ -7,7 +7,6 @@ import {
   Edit3,
   Trash2,
   Users,
-  X,
   ChevronLeft,
   ChevronRight,
   CalendarDays,
@@ -15,10 +14,6 @@ import {
 import { useCompany } from "../CompanyLayout";
 import NoCompanyNotice from "../NoCompanyNotice";
 import { getEventsByCompanyId, deleteEvent } from "@/service/eventApi";
-import {
-  getRegistrationsByEventId,
-  cancelRegistration,
-} from "@/service/eventRegistrationApi";
 import EventFormModal from "./EventFormModal";
 import { eventBadge, formatDate } from "../helpers";
 
@@ -26,6 +21,7 @@ const ROWS_OPTIONS = [5, 10, 25, 50];
 
 export default function EventList() {
   const { companyId, company } = useCompany();
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -34,7 +30,6 @@ export default function EventList() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
-  const [particEvent, setParticEvent] = useState(null);
   const [searchParams] = useSearchParams();
 
   const fetchEvents = async () => {
@@ -208,7 +203,9 @@ export default function EventList() {
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => setParticEvent(event)}
+                            onClick={() =>
+                              navigate(`/company-dashboard/events/${event.id}/participants`)
+                            }
                             className="p-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition"
                             title="View Participants"
                           >
@@ -299,108 +296,6 @@ export default function EventList() {
           setEditingEvent(null);
         }}
       />
-
-      {particEvent && (
-        <ParticipantModal
-          event={particEvent}
-          onClose={() => setParticEvent(null)}
-        />
-      )}
-    </div>
-  );
-}
-
-function ParticipantModal({ event, onClose }) {
-  const [participants, setParticipants] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [removingId, setRemovingId] = useState(null);
-
-  useEffect(() => {
-    setLoading(true);
-    getRegistrationsByEventId(event.id)
-      .then((d) => setParticipants(Array.isArray(d) ? d : []))
-      .catch(() => setParticipants([]))
-      .finally(() => setLoading(false));
-  }, [event.id]);
-
-  const remove = async (reg) => {
-    setRemovingId(reg.id);
-    try {
-      await cancelRegistration(reg.id);
-      setParticipants((prev) => prev.filter((p) => p.id !== reg.id));
-    } catch (err) {
-      console.error("Failed to remove registration:", err);
-    } finally {
-      setRemovingId(null);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg border border-slate-100 max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <div>
-            <h3 className="text-base font-bold text-slate-900">{event.title}</h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {participants.length} registered participant{participants.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition">
-            <X size={20} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-6 space-y-2.5">
-          {loading ? (
-            <div className="py-10 text-center">
-              <Loader2 className="w-7 h-7 animate-spin text-indigo-600 mx-auto mb-2" />
-              <p className="text-xs text-slate-400">Loading participants...</p>
-            </div>
-          ) : participants.length === 0 ? (
-            <div className="py-10 text-center">
-              <Users className="w-9 h-9 text-slate-300 mx-auto mb-2" />
-              <p className="text-sm text-slate-500 font-medium">No registrations yet</p>
-              <p className="text-xs text-slate-400 mt-1">
-                When students register, they'll show up here.
-              </p>
-            </div>
-          ) : (
-            participants.map((p) => (
-              <div
-                key={p.id}
-                className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-3"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-full bg-violet-50 text-violet-600 flex items-center justify-center text-xs font-bold shrink-0">
-                    {(p.userName || "?").substring(0, 2).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">{p.userName || "Unknown"}</p>
-                    <p className="text-[11px] text-slate-400">
-                      Registered {formatDate(p.createdAt)} ·{" "}
-                      <span className="inline-flex items-center px-1.5 py-px rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-semibold">
-                        Registered
-                      </span>
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => remove(p)}
-                  disabled={removingId === p.id}
-                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition disabled:opacity-50"
-                  title="Remove participant"
-                >
-                  {removingId === p.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
     </div>
   );
 }

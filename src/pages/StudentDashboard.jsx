@@ -6,6 +6,8 @@ import StudentSidebar from "@/components/dashboard/StudentSidebar";
 import HeroCard from "@/components/dashboard/HeroCard";
 import MetaCard from "@/components/dashboard/MetaCard";
 import ApplicationsSection from "@/components/dashboard/ApplicationsSection";
+import SavedJobsSection from "@/components/dashboard/SavedJobsSection";
+import SavedEventsSection from "@/components/dashboard/SavedEventsSection";
 import ProfileForm from "@/components/Profile/ProfileForm";
 import ExperienceSection from "@/components/Profile/ExperienceSection";
 import EducationSection from "@/components/Profile/EducationSection";
@@ -110,6 +112,10 @@ export default function StudentDashboard() {
             (profile ? <SkillsSection studentProfileId={profile.id} /> : <NeedProfileCard onGo={goPersonal} />)}
 
           {active === "applications" && <ApplicationsSection studentProfileId={profile?.id} />}
+
+          {active === "saved-jobs" && <SavedJobsSection userId={user.id} />}
+
+          {active === "saved-events" && <SavedEventsSection userId={user.id} />}
 
           {active === "account" && (
             <section className={cardCls}>

@@ -6,20 +6,21 @@ import { useCompany } from "../CompanyLayout";
 const inputClass =
   "w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition";
 const labelClass = "block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1";
-const TYPE_OPTIONS = ["Career Fair", "Workshop", "Seminar", "Training", "Conference", "Competition", "Other"];
+const FORMAT_OPTIONS = ["In-person", "Virtual", "Hybrid"];
 const STATUS_OPTIONS = ["active", "draft", "closed", "cancelled"];
 
 const initialForm = {
   title: "",
   categoryId: "",
   description: "",
-  eventType: "Workshop",
+  eventType: "In-person",
   eventDate: "",
   startTime: "",
   endTime: "",
   location: "",
   registrationDeadline: "",
   maxParticipants: "",
+  fee: "",
   status: "active",
 };
 
@@ -42,13 +43,14 @@ export default function EventFormModal({ open, onClose, event, onSaved }) {
         title: event.title || "",
         categoryId: String(event.categoryId || event.category_id || ""),
         description: event.description || "",
-        eventType: event.eventType || event.event_type || "Workshop",
+        eventType: event.eventType || event.event_type || "In-person",
         eventDate: (event.eventDate || event.event_date || "").slice(0, 10),
         startTime: (event.startTime || event.start_time || "").slice(0, 5),
         endTime: (event.endTime || event.end_time || "").slice(0, 5),
         location: event.location || "",
         registrationDeadline: (event.registrationDeadline || event.registration_deadline || "").slice(0, 10),
         maxParticipants: String(event.maxParticipants || event.max_participants || ""),
+        fee: event.fee != null ? String(event.fee) : "",
         status: event.status || "active",
       });
     } else {
@@ -81,6 +83,7 @@ export default function EventFormModal({ open, onClose, event, onSaved }) {
         location: form.location.trim() || null,
         registrationDeadline: form.registrationDeadline || null,
         maxParticipants: form.maxParticipants ? Number(form.maxParticipants) : null,
+        fee: form.fee !== "" && form.fee != null ? Number(form.fee) : 0,
         status: form.status,
       };
       if (event?.id) {
@@ -148,9 +151,13 @@ export default function EventFormModal({ open, onClose, event, onSaved }) {
             <div>
               <label className={labelClass}>Event Type</label>
               <select name="eventType" value={form.eventType} onChange={handleInput} className={inputClass}>
-                {TYPE_OPTIONS.map((t) => (
+                <option value="">Select event type</option>
+                {FORMAT_OPTIONS.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
+                {form.eventType && !FORMAT_OPTIONS.includes(form.eventType) && (
+                  <option value={form.eventType}>{form.eventType}</option>
+                )}
               </select>
             </div>
           </div>
@@ -205,6 +212,10 @@ export default function EventFormModal({ open, onClose, event, onSaved }) {
                   <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className={labelClass}>Fee (USD, 0 = Free)</label>
+              <input name="fee" type="number" min="0" step="0.01" value={form.fee} onChange={handleInput} className={inputClass} placeholder="e.g. 10.00" />
             </div>
           </div>
 
