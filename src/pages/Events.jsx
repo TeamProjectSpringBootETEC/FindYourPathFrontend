@@ -426,11 +426,17 @@ export default function Events() {
                 >
                   {/* Card Thumbnail Container */}
                   <div className="relative h-44 w-full overflow-hidden bg-gray-100">
-                    <img
-                      src={event.image}
-                      alt={event.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+                    {event.image ? (
+                      <img
+                        src={event.image}
+                        alt={event.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-300">
+                        <CalendarIcon className="w-12 h-12" />
+                      </div>
+                    )}
                     {/* Event Type Badge Overlay */}
                     <div className="absolute top-3 left-3">
                       <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md shadow-sm ${event.typeBadgeColor}`}>

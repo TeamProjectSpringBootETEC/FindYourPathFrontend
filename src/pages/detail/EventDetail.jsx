@@ -13,6 +13,7 @@ import {
   Coffee,
   ChevronRight,
   ShieldCheck,
+  Images,
 } from 'lucide-react';
 import { CATEGORY_OPTIONS, FORMAT_OPTIONS } from '@/data/events';
 import { getEventById } from '@/service/eventApi';
@@ -48,6 +49,11 @@ const mapEvent = (item) => ({
   featured: false,
   isBookmarked: false,
   createdAt: item.createdAt || item.eventDate,
+  images: Array.isArray(item.images)
+    ? item.images.map((img) => img?.url || img).filter(Boolean)
+    : item.image
+    ? [item.image]
+    : [],
 });
 
 const formatEventDate = (dateStr) =>
@@ -77,6 +83,7 @@ export default function EventDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -84,6 +91,7 @@ export default function EventDetail() {
         setLoading(true);
         const data = await getEventById(id);
         setEvent(mapEvent(data));
+        setActiveImageIndex(0);
       } catch (err) {
         setError(true);
       } finally {
@@ -209,8 +217,53 @@ export default function EventDetail() {
         {/* Main Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* Left Column: About, Agenda & Perks */}
-          <div className="lg:col-span-2 space-y-8 bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm">
+          {/* Left Column: Gallery, About, Agenda & Perks */}
+          <div className="lg:col-span-2 space-y-6 bg-white border border-gray-200 rounded-2xl p-4 md:p-6 shadow-sm">
+
+            {/* Event Image Gallery */}
+            {event.images.length > 0 && (() => {
+              const activeImage = event.images[activeImageIndex] || event.images[0];
+              return (
+                <div>
+                  <div className="relative rounded-xl overflow-hidden bg-gray-100">
+                    <img
+                      src={activeImage}
+                      alt={event.title}
+                      className="w-full h-56 sm:h-72 md:h-80 lg:h-[420px] object-cover"
+                    />
+                    {event.images.length > 1 && (
+                      <span className="absolute top-3 right-3 bg-slate-900/70 text-white text-xs font-semibold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                        <Images className="w-3.5 h-3.5" />
+                        {activeImageIndex + 1} / {event.images.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {event.images.length > 1 && (
+                    <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                      {event.images.map((url, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setActiveImageIndex(idx)}
+                          className={`w-24 h-16 shrink-0 rounded-lg overflow-hidden border-2 transition ${
+                            idx === activeImageIndex
+                              ? 'border-blue-600'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          title={`Photo ${idx + 1}`}
+                        >
+                          <img
+                            src={url}
+                            alt={`${event.title} photo ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* About the Event */}
             <div className="space-y-3">

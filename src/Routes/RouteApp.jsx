@@ -11,6 +11,7 @@ import JobDetail from "@/pages/detail/JobDetail";
 import Events from "@/pages/Events";
 import EventDetail from "@/pages/detail/EventDetail";
 import AdminEvents from "@/components/Dashboards/contants/Events";
+import EventCategory from "@/components/Dashboards/contants/EventCategory";
 import ApplyJob from "@/pages/ApplyJob";
 import ApplySuccess from "@/pages/ApplySuccess";
 import StudentDashboard from "@/pages/StudentDashboard";
@@ -138,6 +139,7 @@ function RouteApp() {
         <Route path="jobs" element={<Jobs/>} />
         <Route path="categories" element={<CategoryJob/>} />
         <Route path="events" element={<AdminEvents/>} />
+        <Route path="event-categories" element={<EventCategory/>} />
         <Route path="scholarships" element={<Scholarships/>} />
         <Route path="applications" element={<Applications/>} />
         <Route path="reports" element={<Reports/>} />

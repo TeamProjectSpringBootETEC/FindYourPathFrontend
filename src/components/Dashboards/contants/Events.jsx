@@ -18,6 +18,8 @@ import {
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
+  ImagePlus,
+  Images,
 } from "lucide-react";
 import {
   getAllevent,
@@ -25,6 +27,8 @@ import {
   createEvent,
   updateEvent,
   deleteEvent,
+  uploadEventImages,
+  deleteEventImage,
 } from "@/service/eventApi";
 import { getAllCompanies } from "@/service/CompanyApi";
 
@@ -60,6 +64,11 @@ function Events() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [editingEvent, setEditingEvent] = useState(null);
   const [formData, setFormData] = useState(initialFormState);
+  const [existingImages, setExistingImages] = useState([]);
+  const [newImageFiles, setNewImageFiles] = useState([]);
+  const [newImagePreviews, setNewImagePreviews] = useState([]);
+  const [deletingImageId, setDeletingImageId] = useState(null);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const fetchEvents = async () => {
     try {
@@ -104,6 +113,17 @@ function Events() {
     const id = String(getEventCategoryId(event));
     const matched = categories.find((c) => String(c.id) === id);
     return matched?.name || "Uncategorized";
+  };
+
+  const getEventImages = (event) => {
+    if (Array.isArray(event.images)) {
+      return event.images.map((img) => ({
+        id: img?.id ?? img?.attachmentId ?? null,
+        url: img?.url || img,
+      }));
+    }
+    if (event.image) return [{ id: null, url: event.image }];
+    return [];
   };
 
   const getCompanyName = (event) => {
@@ -179,6 +199,9 @@ function Events() {
   const openCreateModal = () => {
     setEditingEvent(null);
     setFormData(initialFormState);
+    setExistingImages([]);
+    setNewImageFiles([]);
+    setNewImagePreviews([]);
     setIsModalOpen(true);
   };
 
@@ -202,7 +225,66 @@ function Events() {
       ),
       status: event.status || "UPCOMING",
     });
+    setExistingImages(getEventImages(event));
+    setNewImageFiles([]);
+    setNewImagePreviews([]);
     setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingEvent(null);
+    setFormData(initialFormState);
+    setExistingImages([]);
+    setNewImageFiles([]);
+    setNewImagePreviews((prev) => {
+      prev.forEach((url) => URL.revokeObjectURL(url));
+      return [];
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      newImagePreviews.forEach((url) => URL.revokeObjectURL(url));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setNewImageFiles((prev) => [...prev, ...files]);
+    setNewImagePreviews((prev) => [
+      ...prev,
+      ...files.map((file) => URL.createObjectURL(file)),
+    ]);
+    e.target.value = "";
+  };
+
+  const removeNewImage = (index) => {
+    setNewImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setNewImagePreviews((prev) => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleDeleteImage = async (attachmentId) => {
+    if (!editingEvent) return;
+    if (!window.confirm("Are you sure you want to delete this image?")) return;
+    try {
+      setDeletingImageId(attachmentId);
+      await deleteEventImage(editingEvent.id, attachmentId);
+      setExistingImages((prev) => prev.filter((img) => img.id !== attachmentId));
+      fetchEvents();
+      alert("Image deleted successfully.");
+    } catch (err) {
+      console.error("Failed to delete event image:", err);
+      const backendMessage = err.response?.data?.message || err.message;
+      alert(`Delete failed: ${backendMessage}`);
+    } finally {
+      setDeletingImageId(null);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -228,11 +310,26 @@ function Events() {
 
     try {
       setSubmitting(true);
+      let savedId = editingEvent ? editingEvent.id : null;
       if (editingEvent) {
         await updateEvent(editingEvent.id, payload);
       } else {
-        await createEvent(payload);
+        const created = await createEvent(payload);
+        const createdData = created?.data || created;
+        savedId = createdData?.id ?? createdData?.eventId ?? null;
       }
+
+      if (newImageFiles.length > 0 && savedId != null) {
+        setUploadingImages(true);
+        await uploadEventImages(savedId, newImageFiles);
+      }
+
+      setNewImageFiles([]);
+      setNewImagePreviews((prev) => {
+        prev.forEach((url) => URL.revokeObjectURL(url));
+        return [];
+      });
+      setExistingImages([]);
       setIsModalOpen(false);
       fetchEvents();
     } catch (err) {
@@ -241,6 +338,7 @@ function Events() {
       alert(`Save failed: ${backendMessage}`);
     } finally {
       setSubmitting(false);
+      setUploadingImages(false);
     }
   };
 
@@ -759,32 +857,109 @@ function Events() {
               </div>
 
               <div>
-                <label className={labelClass}>Description</label>
-                <textarea
-                  name="description"
-                  rows="3"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  className={`${inputClass} resize-none`}
-                  placeholder="Enter event description..."
-                />
+                <label className={labelClass}>Event Images (can add multiple)</label>
+
+                {existingImages.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-[10px] font-semibold text-slate-400 mb-2">
+                      Uploaded images
+                    </p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {existingImages.map((img) => (
+                        <div
+                          key={img.id ?? img.url}
+                          className="relative group aspect-video rounded-lg overflow-hidden bg-slate-100 border border-slate-200"
+                        >
+                          <img
+                            src={img.url}
+                            alt="Event"
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteImage(img.id)}
+                            disabled={deletingImageId === img.id}
+                            className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold transition-opacity disabled:opacity-40"
+                          >
+                            {deletingImageId === img.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <span className="flex items-center gap-1">
+                                <X className="w-3.5 h-3.5" /> Remove
+                              </span>
+                            )}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {newImagePreviews.map((url, index) => (
+                      <div
+                        key={url}
+                        className="relative group aspect-video rounded-lg overflow-hidden bg-slate-100 border border-dashed border-indigo-300"
+                      >
+                        <img
+                          src={url}
+                          alt="New event"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeNewImage(index)}
+                          className="absolute top-1 right-1 p-1 bg-slate-900/60 text-white rounded-full hover:bg-rose-600 transition"
+                          title="Remove image"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <label className="mt-3 inline-flex items-center gap-2 px-3.5 py-2 border border-dashed border-indigo-300 bg-indigo-50/50 text-indigo-600 text-xs font-semibold rounded-lg cursor-pointer hover:bg-indigo-50 transition">
+                  <ImagePlus className="w-4 h-4" />
+                  {newImageFiles.length > 0
+                    ? `${newImageFiles.length} image${newImageFiles.length > 1 ? "s" : ""} selected`
+                    : "Choose images"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageSelect}
+                    className="hidden"
+                  />
+                </label>
+                <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                  <Images className="w-3 h-3" />
+                  You can select multiple images; they upload after saving the event.
+                </p>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={closeModal}
                   className="px-5 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || uploadingImages}
                   className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-100 transition active:scale-[0.98] disabled:opacity-50"
                 >
-                  {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {editingEvent ? "Update Event" : "Save Event"}
+                  {(submitting || uploadingImages) && (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  )}
+                  {uploadingImages
+                    ? "Uploading images..."
+                    : editingEvent
+                    ? "Update Event"
+                    : "Save Event"}
                 </button>
               </div>
             </form>

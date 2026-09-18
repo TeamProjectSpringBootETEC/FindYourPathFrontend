@@ -24,6 +24,7 @@ const mainNavItems = [
   { name: "Jobs", path: "/dashboard/jobs", icon: BriefcaseIcon },
   { name: "Job categories", path: "/dashboard/categories", icon: FolderTree },
   { name: "Events", path: "/dashboard/events", icon: CalendarDays },
+  { name: "Event categories", path: "/dashboard/event-categories", icon: FolderTree },
   { name: "Applications", path: "/dashboard/applications", icon: FileText },
   { name: "Report & Analytics", path: "/dashboard/reports", icon: BarChart3 },
 ];
