@@ -18,6 +18,9 @@ import StudentDashboard from "@/pages/StudentDashboard";
 import StudentProfileView from "@/pages/StudentProfileView";
 import Register from "@/pages/Register";
 import Login from "@/pages/Login";
+import ForgotPassword from "@/pages/ForgotPassword";
+import VerifyOtp from "@/pages/VerifyOtp";
+import ResetPassword from "@/pages/ResetPassword";
 import Company from "@/components/Dashboards/contants/Company";
 import Users from "@/components/Dashboards/contants/Users";
 import Jobs from "@/components/Dashboards/contants/Jobs";
@@ -135,6 +138,9 @@ function RouteApp() {
       {/* Auth Pages -> No Navbar / Footer */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/verify-otp" element={<VerifyOtp />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Dashboard Pages -> Shows Sidebar (No Navbar) */}
       <Route path="/dashboard" element={<RequireRole roleId={1}><DashboardLayout /></RequireRole>}>

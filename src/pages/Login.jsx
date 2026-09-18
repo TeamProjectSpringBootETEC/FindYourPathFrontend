@@ -96,13 +96,12 @@ export default function Login() {
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
               <label className="text-xs font-semibold text-gray-700">Password</label>
-              <a 
-                href="#forgot-password" 
-                onClick={(e) => { e.preventDefault(); alert('Forgot password clicked'); }}
+              <Link
+                to="/forgot-password"
                 className="text-xs text-blue-600 font-semibold hover:underline"
               >
                 Forgot password?
-              </a>
+              </Link>
             </div>
             <div className="relative">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
