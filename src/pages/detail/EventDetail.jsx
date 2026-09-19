@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -13,8 +13,55 @@ import {
   Coffee,
   ChevronRight,
   ShieldCheck,
+  Images,
 } from 'lucide-react';
-import { initialEvents, CATEGORY_OPTIONS, FORMAT_OPTIONS } from '@/data/events';
+import { CATEGORY_OPTIONS, FORMAT_OPTIONS } from '@/data/events';
+import { getEventById } from '@/service/eventApi';
+import {
+  getRegistrationsByUserId,
+  cancelRegistration,
+} from '@/service/eventRegistrationApi';
+import { getCurrentUser } from '@/service/session';
+import EventRegistrationModal from '@/components/EventRegistrationModal';
+
+const getFormatKey = (eventType = '') => {
+  const type = eventType.toLowerCase();
+  if (type.includes('hybrid')) return 'hybrid';
+  if (type.includes('virtual') || type.includes('online')) return 'virtual';
+  return 'inPerson';
+};
+
+const getCategoryKey = (categoryName = '') => {
+  const name = categoryName.toLowerCase();
+  if (name.includes('fair') || name.includes('career')) return 'careerFair';
+  if (name.includes('workshop')) return 'workshop';
+  if (name.includes('network')) return 'networking';
+  return 'seminar';
+};
+
+const mapEvent = (item) => ({
+  id: item.id,
+  title: item.title,
+  description: item.description,
+  type: item.eventType || item.categoryName || 'Event',
+  format: item.eventType,
+  categoryKey: getCategoryKey(item.categoryName),
+  formatKey: getFormatKey(item.eventType),
+  date: item.eventDate ? `${item.eventDate}T${item.startTime || '00:00:00'}` : '',
+  location: item.location,
+  organization: item.companyName,
+  fee: Number(item.fee || 0),
+  payment: Number(item.fee || 0) > 0 ? `$${Number(item.fee).toFixed(2)}` : 'Free',
+  tags: [item.categoryName, item.eventType, item.companyName].filter(Boolean),
+  featured: false,
+  isBookmarked: false,
+  createdAt: item.createdAt || item.eventDate,
+  images: Array.isArray(item.images)
+    ? item.images.map((img) => img?.url || img).filter(Boolean)
+    : item.image
+    ? [item.image]
+    : [],
+});
 
 const formatEventDate = (dateStr) =>
   new Date(dateStr).toLocaleDateString('en-GB', {
@@ -39,11 +86,91 @@ export default function EventDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const event = initialEvents.find((e) => e.id === Number(id));
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [registrationId, setRegistrationId] = useState(null);
+  const [registering, setRegistering] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
 
-  const [isSaved, setIsSaved] = useState(event?.isBookmarked ?? false);
+  useEffect(() => {
+    const fetchEvent = async () => {
+      try {
+        setLoading(true);
+        const data = await getEventById(id);
+        setEvent(mapEvent(data));
+        setActiveImageIndex(0);
 
-  if (!event) {
+        const user = getCurrentUser();
+        if (user) {
+          try {
+            const regs = await getRegistrationsByUserId(user.id);
+            const list = Array.isArray(regs) ? regs : regs?.data || [];
+            const rec = list.find((r) => Number(r.eventId) === Number(id));
+            if (rec) {
+              setRegistrationId(rec.id);
+              setIsSaved(true);
+            }
+          } catch (err) {
+            console.error('Failed to load registration state:', err);
+          }
+        }
+      } catch (err) {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvent();
+  }, [id]);
+
+  const handleRegisterClick = () => {
+    const user = getCurrentUser();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (isSaved) {
+      if (!window.confirm('Cancel your registration for this event?')) return;
+      if (registering) return;
+      setRegistering(true);
+      cancelRegistration(registrationId)
+        .then(() => {
+          setRegistrationId(null);
+          setIsSaved(false);
+        })
+        .catch((err) => {
+          console.error('Failed to cancel registration:', err);
+          alert(err.response?.data?.message || 'Failed to cancel registration.');
+        })
+        .finally(() => setRegistering(false));
+      return;
+    }
+    setShowRegisterModal(true);
+  };
+
+  const handleRegistered = (registration) => {
+    const data = registration?.data || registration;
+    setRegistrationId(data?.id ?? data?.registrationId ?? null);
+    setIsSaved(true);
+    setShowRegisterModal(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50/50 font-sans text-gray-800 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-center items-center min-h-[80vh]">
+            <p>Loading event...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !event) {
     return (
       <div className="min-h-screen bg-gray-50/50 font-sans text-gray-800 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
@@ -130,8 +257,10 @@ export default function EventDetail() {
                 <Share2 className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setIsSaved(!isSaved)}
-                className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:border-gray-300 hover:text-blue-600 transition-colors shadow-sm"
+                onClick={handleRegisterClick}
+                disabled={registering}
+                className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:border-gray-300 hover:text-blue-600 transition-colors shadow-sm disabled:opacity-50"
+                title={isSaved ? 'Registered — click to cancel' : 'Register for event'}
               >
                 {isSaved ? (
                   <BookmarkCheck className="w-5 h-5 text-purple-600 fill-purple-600" />
@@ -147,8 +276,53 @@ export default function EventDetail() {
         {/* Main Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* Left Column: About, Agenda & Perks */}
-          <div className="lg:col-span-2 space-y-8 bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm">
+          {/* Left Column: Gallery, About, Agenda & Perks */}
+          <div className="lg:col-span-2 space-y-6 bg-white border border-gray-200 rounded-2xl p-4 md:p-6 shadow-sm">
+
+            {/* Event Image Gallery */}
+            {event.images.length > 0 && (() => {
+              const activeImage = event.images[activeImageIndex] || event.images[0];
+              return (
+                <div>
+                  <div className="relative rounded-xl overflow-hidden bg-gray-100">
+                    <img
+                      src={activeImage}
+                      alt={event.title}
+                      className="w-full h-56 sm:h-72 md:h-80 lg:h-[420px] object-cover"
+                    />
+                    {event.images.length > 1 && (
+                      <span className="absolute top-3 right-3 bg-slate-900/70 text-white text-xs font-semibold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                        <Images className="w-3.5 h-3.5" />
+                        {activeImageIndex + 1} / {event.images.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {event.images.length > 1 && (
+                    <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                      {event.images.map((url, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setActiveImageIndex(idx)}
+                          className={`w-24 h-16 shrink-0 rounded-lg overflow-hidden border-2 transition ${
+                            idx === activeImageIndex
+                              ? 'border-blue-600'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          title={`Photo ${idx + 1}`}
+                        >
+                          <img
+                            src={url}
+                            alt={`${event.title} photo ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* About the Event */}
             <div className="space-y-3">
@@ -235,14 +409,25 @@ export default function EventDetail() {
 
             {/* Top Action Buttons Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-3">
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors shadow-sm shadow-blue-200">
-                Register Now
+              <button
+                onClick={handleRegisterClick}
+                disabled={registering}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors shadow-sm shadow-blue-200 disabled:opacity-50"
+              >
+                {registering
+                  ? 'Please wait...'
+                  : isSaved
+                  ? 'Registered — Click to Cancel'
+                  : event.fee > 0
+                  ? 'Register Now'
+                  : 'Register Now (Free)'}
               </button>
               <button
-                onClick={() => setIsSaved(!isSaved)}
-                className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-3 rounded-xl font-semibold text-sm transition-colors"
+                onClick={handleRegisterClick}
+                disabled={registering}
+                className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-3 rounded-xl font-semibold text-sm transition-colors disabled:opacity-50"
               >
-                {isSaved ? 'Saved' : 'Save Event'}
+                {isSaved ? 'Remove from Saved Events' : 'Save Event'}
               </button>
             </div>
 
@@ -308,6 +493,15 @@ export default function EventDetail() {
         </div>
 
       </div>
+
+      {showRegisterModal && (
+        <EventRegistrationModal
+          event={event}
+          user={getCurrentUser()}
+          onClose={() => setShowRegisterModal(false)}
+          onRegistered={handleRegistered}
+        />
+      )}
     </div>
   );
 }

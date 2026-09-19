@@ -10,6 +10,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { getJobById } from '@/service/JobApi';
+import { getSavedJobsByStudent, createSavedJob, deleteSavedJob } from '@/service/savedJobApi';
+import { getCurrentUser } from '@/service/session';
 
 const getDeadlineInfo = (deadline) => {
   if (!deadline) return { text: 'No deadline', expired: false };
@@ -35,6 +37,8 @@ export default function JobDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [savedId, setSavedId] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -42,6 +46,21 @@ export default function JobDetail() {
         setLoading(true);
         const data = await getJobById(id);
         setJob(data);
+
+        const user = getCurrentUser();
+        if (user) {
+          try {
+            const saved = await getSavedJobsByStudent(user.id);
+            const list = Array.isArray(saved) ? saved : saved?.data || [];
+            const rec = list.find((r) => Number(r.jobId) === Number(id));
+            if (rec) {
+              setSavedId(rec.id);
+              setIsSaved(true);
+            }
+          } catch (err) {
+            console.error('Failed to load saved state:', err);
+          }
+        }
       } catch (err) {
         setError('Failed to load job details');
       } finally {
@@ -50,6 +69,34 @@ export default function JobDetail() {
     };
     fetchJob();
   }, [id]);
+
+  const handleSaveToggle = async () => {
+    const user = getCurrentUser();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (saving) return;
+    setSaving(true);
+    try {
+      if (isSaved) {
+        await deleteSavedJob(savedId);
+        setSavedId(null);
+        setIsSaved(false);
+      } else {
+        const created = await createSavedJob({ studentId: user.id, jobId: job.id });
+        const createdData = created?.data || created;
+        setSavedId(createdData?.id ?? createdData?.savedJobId ?? null);
+        setIsSaved(true);
+      }
+    } catch (err) {
+      console.error('Failed to save job:', err);
+      const backendMessage = err.response?.data?.message || err.message;
+      alert(`Save failed: ${backendMessage}`);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -151,8 +198,10 @@ export default function JobDetail() {
                 <Share2 className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setIsSaved(!isSaved)}
-                className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:border-gray-300 hover:text-blue-600 transition-colors shadow-sm"
+                onClick={handleSaveToggle}
+                disabled={saving}
+                className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:border-gray-300 hover:text-blue-600 transition-colors shadow-sm disabled:opacity-50"
+                title={isSaved ? 'Remove from saved jobs' : 'Save job'}
               >
                 {isSaved ? (
                   <BookmarkCheck className="w-5 h-5 text-purple-600 fill-purple-600" />
@@ -224,14 +273,18 @@ export default function JobDetail() {
             
             {/* Top Action Buttons Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-3">
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors shadow-sm shadow-blue-200">
+              <button
+                onClick={() => navigate(`/apply/${job.id}`)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold text-sm transition-colors shadow-sm shadow-blue-200"
+              >
                 Apply Now
               </button>
               <button
-                onClick={() => setIsSaved(!isSaved)}
-                className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-3 rounded-xl font-semibold text-sm transition-colors"
+                onClick={handleSaveToggle}
+                disabled={saving}
+                className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-3 rounded-xl font-semibold text-sm transition-colors disabled:opacity-50"
               >
-                {isSaved ? 'Saved' : 'Save Job'}
+                {saving ? 'Saving...' : isSaved ? 'Remove from Saved Jobs' : 'Save Job'}
               </button>
             </div>
 
@@ -240,9 +293,9 @@ export default function JobDetail() {
               <h3 className="font-bold text-base text-gray-900 pb-2 border-b border-gray-100">Job Overview</h3>
 
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Job Category</span>
-                  <span className="font-semibold text-blue-600">{job.jobCategoryName}</span>
+                <div className="flex justify-between items-start gap-4">
+                  <span className="text-gray-500 shrink-0">Job Category</span>
+                  <span className="font-semibold text-blue-600 text-right">{job.jobCategoryName}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">Employment Type</span>

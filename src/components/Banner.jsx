@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 function Banner() {
   return (
     <>
-      <section className="relative overflow-hidden bg-gradient-to-br from-white via-blue-50 to-blue-100">
+      <section className="relative overflow-hidden">
         {/* Background Decorations */}
         <div className="absolute -left-20 top-10 h-64 w-64 rounded-full bg-blue-100/60 blur-3xl"></div>
         <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-blue-200/40 blur-3xl"></div>
