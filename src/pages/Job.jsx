@@ -12,11 +12,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getAllJob, getAllJobFields, getAllJobCategories } from '@/service/JobApi';
-<<<<<<< HEAD
-=======
 import { getSavedJobsByStudent, createSavedJob, deleteSavedJob } from '@/service/savedJobApi';
 import { getCurrentUser } from '@/service/session';
->>>>>>> dev
 
 const ITEMS_PER_PAGE = 6;
 
