@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { GraduationCap, UserCog } from "lucide-react";
+import { GraduationCap, UserCog, FileText, Bookmark, CalendarDays } from "lucide-react";
 import { getStudentProfileByUserId } from "@/service/studentProfileApi";
 import StudentSidebar from "@/components/dashboard/StudentSidebar";
 import HeroCard from "@/components/dashboard/HeroCard";
@@ -36,7 +36,9 @@ const cardCls = "rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm";
 export default function StudentDashboard() {
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user") || "null"));
   const [profile, setProfile] = useState(null);
-  const [active, setActive] = useState("personal");
+  const [active, setActive] = useState("overview");
+  const [scrollToPersonal, setScrollToPersonal] = useState(false);
+  const personalSectionRef = useRef(null);
 
   const loadProfile = async () => {
     if (!user) return;
@@ -51,7 +53,18 @@ export default function StudentDashboard() {
     loadProfile();
   }, [user]);
 
-  const goPersonal = () => setActive("personal");
+  // Scroll to the personal & academic form when Edit Profile is clicked
+  useEffect(() => {
+    if (scrollToPersonal) {
+      personalSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setScrollToPersonal(false);
+    }
+  }, [scrollToPersonal, active]);
+
+  const goPersonal = () => {
+    setActive("personal");
+    setScrollToPersonal(true);
+  };
 
   if (!user) {
     return (
@@ -90,10 +103,41 @@ export default function StudentDashboard() {
             onEditProfile={goPersonal}
           />
 
+          {active === "overview" && (
+            <section className={cardCls}>
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Welcome back, {user.name}</h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Manage your profile, applications, saved jobs and events from this dashboard.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    { id: "personal", label: "Personal & Academic", icon: GraduationCap },
+                    { id: "applications", label: "My Applications", icon: FileText },
+                    { id: "saved-jobs", label: "Saved Jobs", icon: Bookmark },
+                    { id: "saved-events", label: "Saved Events", icon: CalendarDays },
+                  ].map(({ id, label, icon: Icon }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setActive(id)}
+                      className="flex flex-col items-start gap-2 rounded-2xl border border-slate-200/80 bg-slate-50/60 p-4 text-left transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-sm"
+                    >
+                      <Icon className="h-5 w-5 text-indigo-600" />
+                      <span className="text-sm font-semibold text-slate-700">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
           {active === "personal" && (
             <>
               <MetaCard user={user} profile={profile} />
-              <section className={cardCls}>
+              <section ref={personalSectionRef} className={cardCls}>
                 <h2 className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-2 font-bold text-slate-900">
                   <GraduationCap className="h-4 w-4 text-indigo-600" /> Personal & Academic Information
                 </h2>

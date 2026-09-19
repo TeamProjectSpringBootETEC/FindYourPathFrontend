@@ -1,7 +1,8 @@
 import React from "react";
-import { GraduationCap, Briefcase, School, FileText, Settings, Sparkles, Bookmark, CalendarDays } from "lucide-react";
+import { LayoutDashboard, GraduationCap, Briefcase, School, FileText, Settings, Sparkles, Bookmark, CalendarDays } from "lucide-react";
 
 const items = [
+  { id: "overview", label: "Dashboard", icon: LayoutDashboard },
   { id: "personal", label: "Personal & Academic", icon: GraduationCap },
   { id: "experience", label: "Work Experiences", icon: Briefcase },
   { id: "education", label: "Education History", icon: School },
