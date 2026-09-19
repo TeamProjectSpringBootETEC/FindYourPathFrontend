@@ -10,6 +10,11 @@ export const loginUser = async (credentials) => {
   return response.data;
 };
 
+export const googleLogin = async ({ idToken, roleId }) => {
+  const response = await api.post("/auth/google", { idToken, roleId });
+  return response.data;
+};
+
 export const updateUser = async (id, userData) => {
   const response = await api.put(`/v1/users/${id}`, userData);
   return response.data;
