@@ -32,6 +32,7 @@ function Navbar() {
     { name: "Home", path: "/" },
     { name: "Jobs", path: "/job" },
     { name: "Events", path: "/events" },
+    { name: "Company", path: "/company" },
     { name: "About Us", path: "/about" },
   ];
 

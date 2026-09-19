@@ -10,6 +10,8 @@ import Job from "@/pages/Job";
 import JobDetail from "@/pages/detail/JobDetail";
 import Events from "@/pages/Events";
 import EventDetail from "@/pages/detail/EventDetail";
+import CompanyPage from "@/pages/Company";
+import CompanyDetail from "@/pages/detail/CompanyDetail";
 import AdminEvents from "@/components/Dashboards/contants/Events";
 import EventCategory from "@/components/Dashboards/contants/EventCategory";
 import ApplyJob from "@/pages/ApplyJob";
@@ -129,7 +131,9 @@ function RouteApp() {
         <Route path="/events" element={<Events/>} />
         <Route path="/event/:id" element={<EventDetail />} />
         <Route path="/ticket/:ticketCode" element={<TicketCheckIn />} />
-        <Route path="/companies" element={<h1 className="p-4 text-2xl font-bold">Companies Page</h1>} />
+        <Route path="/companies" element={<CompanyPage />} />
+        <Route path="/company" element={<CompanyPage />} />
+        <Route path="/company/:id" element={<CompanyDetail />} />
         <Route path="/about" element={<AboutUs/>} />
         <Route path="/profile" element={<StudentDashboard />} />
         <Route path="/student/:id" element={<StudentProfileView />} />
