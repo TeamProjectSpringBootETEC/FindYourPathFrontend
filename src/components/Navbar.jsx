@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
-import { User, LogOut, LayoutDashboard } from "lucide-react";
+import { User, LogOut, LayoutDashboard, Bell } from "lucide-react";
 import { getStudentProfileByUserId } from "@/service/studentProfileApi";
+import { getNotificationsByUser } from "@/service/notificationApi";
 
 function Navbar() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ function Navbar() {
   const [langOpen, setLangOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [photoUrl, setPhotoUrl] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const langDropdownRef = useRef(null);
   const profileDropdownRef = useRef(null);
@@ -26,6 +28,21 @@ function Navbar() {
     getStudentProfileByUserId(user.id)
       .then((profile) => setPhotoUrl(profile.profile_photo || null))
       .catch(() => setPhotoUrl(null));
+  }, [user?.id]);
+
+  // Load the unread notification count for the bell badge
+  useEffect(() => {
+    if (!user?.id) return;
+    let active = true;
+    getNotificationsByUser(user.id)
+      .then((data) => {
+        const list = Array.isArray(data) ? data : [];
+        if (active) setUnreadCount(list.filter((n) => !n.isRead).length);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, [user?.id]);
 
   const navLinks = [
@@ -189,26 +206,18 @@ function Navbar() {
         </div>
 
         {/* ================= NOTIFICATION ================= */}
-        <button
-          type="button"
-          className="p-1 text-gray-600 transition-colors hover:text-blue-600"
+        <Link
+          to={user ? "/notifications" : "/login"}
+          className="relative p-1 text-gray-600 transition-colors hover:text-blue-600"
           aria-label="Notifications"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-            />
-          </svg>
-        </button>
+          <Bell className="h-5 w-5" />
+          {user && unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </Link>
 
         {/* ================= AUTH ================= */}
         {user ? (

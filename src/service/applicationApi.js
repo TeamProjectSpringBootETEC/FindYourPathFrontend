@@ -52,6 +52,16 @@ export const updateApplicationStatus = async (applicationId, status, changedByUs
   return response.data;
 };
 
+// Phase 5 - PUT /api/applications/{id}/status (also records status history)
+export const updateApplicationStatusV2 = async (applicationId, status, changedByUserId) => {
+  const response = await api.put(`/applications/${applicationId}/status`, {
+    applicationId,
+    status,
+    changedByUserId,
+  });
+  return response.data;
+};
+
 export const getStatusHistories = async (applicationId) => {
   const response = await api.get(`/application-status-histories/application/${applicationId}`);
   return response.data;

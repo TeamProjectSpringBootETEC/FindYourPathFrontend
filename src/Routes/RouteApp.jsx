@@ -38,6 +38,8 @@ import ApplicantList from "@/components/CompanyDashboard/applicants/ApplicantLis
 import EventList from "@/components/CompanyDashboard/events/EventList";
 import EventParticipants from "@/pages/EventParticipants";
 import TicketCheckIn from "@/pages/TicketCheckIn";
+import InterviewPage from "@/pages/InterviewPage";
+import NotificationsPage from "@/pages/NotificationsPage";
 import { Menu } from "lucide-react"; 
 import RequireRole from "@/components/RequireRole"; 
 
@@ -133,6 +135,8 @@ function RouteApp() {
         <Route path="/about" element={<AboutUs/>} />
         <Route path="/profile" element={<StudentDashboard />} />
         <Route path="/student/:id" element={<StudentProfileView />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/interview/:interviewId" element={<InterviewPage />} />
       </Route>
 
       {/* Auth Pages -> No Navbar / Footer */}
