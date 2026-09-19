@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Briefcase, Loader2, Inbox, FileDown } from "lucide-react";
+import { Briefcase, Loader2, Inbox, FileDown, Mic2 } from "lucide-react";
 import { useCompany } from "../CompanyLayout";
 import NoCompanyNotice from "../NoCompanyNotice";
 import { getJobsByCompanyId } from "@/service/JobApi";
 import { getApplicationsByJob } from "@/service/applicationApi";
-import { applicationBadge, formatDate } from "../helpers";
+import { getInterviewByApplication, inviteCandidate } from "@/service/interviewApi";
+import { applicationBadge, interviewBadge, formatDate } from "../helpers";
 import CandidateDetailModal from "./CandidateDetailModal";
 
 export default function ApplicantList() {
@@ -16,6 +17,8 @@ export default function ApplicantList() {
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [loadingApps, setLoadingApps] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
+  const [invitingId, setInvitingId] = useState(null);
+  const [interviews, setInterviews] = useState({});
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
@@ -40,12 +43,29 @@ export default function ApplicantList() {
   useEffect(() => {
     if (!selectedJobId) {
       setApplications([]);
+      setInterviews({});
       return;
     }
     setLoadingApps(true);
     setSearchParams({ job: selectedJobId }, { replace: true });
     getApplicationsByJob(selectedJobId)
-      .then((data) => setApplications(Array.isArray(data) ? data : []))
+      .then((data) => {
+        const apps = Array.isArray(data) ? data : [];
+        setApplications(apps);
+        // Preload existing interviews so the list shows real status instead of
+        // offering "Start Mock Interview" to candidates who already took one.
+        if (apps.length) {
+          Promise.allSettled(
+            apps.map((app) => getInterviewByApplication(app.id))
+          ).then((results) => {
+            const map = {};
+            results.forEach((r, i) => {
+              if (r.status === "fulfilled" && r.value) map[apps[i].id] = r.value;
+            });
+            if (Object.keys(map).length) setInterviews(map);
+          });
+        }
+      })
       .catch(() => setApplications([]))
       .finally(() => setLoadingApps(false));
   }, [selectedJobId, setSearchParams]);
@@ -54,6 +74,18 @@ export default function ApplicantList() {
     () => jobs.find((j) => String(j.id) === String(selectedJobId)),
     [jobs, selectedJobId]
   );
+
+  const startInterview = async (applicationId) => {
+    setInvitingId(applicationId);
+    try {
+      const interview = await inviteCandidate(applicationId);
+      setInterviews((prev) => ({ ...prev, [applicationId]: interview }));
+    } catch (err) {
+      console.error("Failed to start mock interview:", err);
+    } finally {
+      setInvitingId(null);
+    }
+  };
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -135,6 +167,7 @@ export default function ApplicantList() {
                   <th className="py-3 px-6">Applied Date</th>
                   <th className="py-3 px-6">CV</th>
                   <th className="py-3 px-6">Status</th>
+                  <th className="py-3 px-6">Mock Interview</th>
                   <th className="py-3 px-6 text-right">Action</th>
                 </tr>
               </thead>
@@ -184,6 +217,30 @@ export default function ApplicantList() {
                       >
                         {app.status || "pending"}
                       </span>
+                    </td>
+                    <td className="py-3.5 px-6">
+                      {interviews[app.id] ? (
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${interviewBadge(interviews[app.id].status)}`}>
+                          <Mic2 className="w-3 h-3" />
+                          {interviews[app.id].status}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startInterview(app.id);
+                          }}
+                          disabled={invitingId === app.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-bold transition disabled:opacity-50"
+                        >
+                          {invitingId === app.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Mic2 className="w-3 h-3" />
+                          )}
+                          {invitingId === app.id ? "Inviting…" : "Start Mock Interview"}
+                        </button>
+                      )}
                     </td>
                     <td className="py-3.5 px-6 text-right">
                       <button className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition">
