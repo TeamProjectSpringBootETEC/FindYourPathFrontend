@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import axios from "axios";
 import {
   BarChart3,
   TrendingUp,
@@ -15,63 +14,184 @@ import {
   Loader2,
   Download,
 } from "lucide-react";
+import { getAllJob, getAllJobCategories } from "@/service/JobApi";
+import { getAllCompanies } from "@/service/CompanyApi";
+import { getAllApplications } from "@/service/applicationApi";
+import { getAllevent } from "@/service/eventApi";
+import { getInterviewsByCompany } from "@/service/interviewApi";
 
-const JOBS_API_URL = "http://localhost:8089/api/jobs";
-const CATEGORIES_API_URL = "http://localhost:8089/api/job-categories";
-const COMPANIES_API_URL = "http://localhost:8089/api/companies";
-
-// Sample analytics (no backend endpoint for this yet)
-const MONTHLY_TREND = [42, 51, 47, 68, 74, 89, 96, 112, 128, 141, 155, 172];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const RANGES = ["This Month", "This Quarter", "This Year"];
+const PERIOD_LENGTH = { "This Month": 1, "This Quarter": 3, "This Year": 12 };
 
-const FUNNEL = [
-  { label: "Views", value: 4920, color: "bg-indigo-500" },
-  { label: "Applications", value: 3170, color: "bg-violet-500" },
-  { label: "Interviews", value: 1240, color: "bg-fuchsia-500" },
-  { label: "Offers", value: 620, color: "bg-emerald-500" },
-  { label: "Hires", value: 310, color: "bg-teal-500" },
-];
-
-const KPI = [
-  { label: "Applications", value: "3,170", delta: "+12.4%", up: true, icon: MousePointerClick, color: "bg-indigo-50 text-indigo-600" },
-  { label: "Interview Rate", value: "39.1%", delta: "+2.3%", up: true, icon: Users, color: "bg-sky-50 text-sky-600" },
-  { label: "Offer Rate", value: "19.6%", delta: "-0.8%", up: false, icon: Target, color: "bg-amber-50 text-amber-600" },
-  { label: "Conversion", value: "9.8%", delta: "+1.1%", up: true, icon: TrendingUp, color: "bg-emerald-50 text-emerald-600" },
-];
+const toDate = (v) => {
+  if (!v) return null;
+  if (typeof v === "string") return new Date(v.includes(" ") ? v.replace(" ", "T") : v);
+  return new Date(v);
+};
+const monthIndex = (d) =>
+  d == null || Number.isNaN(d.getTime()) ? null : d.getFullYear() * 12 + d.getMonth();
+const lowerStatus = (s) => String(s || "").toLowerCase();
+const pctDelta = (cur, prev) =>
+  prev === 0 ? (cur > 0 ? 100 : 0) : Math.round(((cur - prev) / prev) * 1000) / 10;
+const fmtDelta = (d) => `${d >= 0 ? "+" : ""}${Math.abs(d).toFixed(1)}%`;
 
 function Reports() {
   const [jobs, setJobs] = useState([]);
   const [categories, setCategories] = useState([]);
   const [companies, setCompanies] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState("This Year");
+
+  const toArray = (value) => (Array.isArray(value) ? value : value?.data || []);
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [j, c, co] = await Promise.allSettled([
-          axios.get(JOBS_API_URL),
-          axios.get(CATEGORIES_API_URL),
-          axios.get(COMPANIES_API_URL),
+        const [j, c, co, e, a] = await Promise.allSettled([
+          getAllJob(),
+          getAllJobCategories(),
+          getAllCompanies(),
+          getAllevent(),
+          getAllApplications(),
         ]);
-        if (j.status === "fulfilled") {
-          const d = j.value.data;
-          setJobs(Array.isArray(d) ? d : d.data || []);
+        const comps = toArray(co.status === "fulfilled" ? co.value : null);
+        setJobs(toArray(j.status === "fulfilled" ? j.value : null));
+        setCategories(toArray(c.status === "fulfilled" ? c.value : null));
+        setCompanies(comps);
+        setEvents(toArray(e.status === "fulfilled" ? e.value : null));
+        setApplications(toArray(a.status === "fulfilled" ? a.value : null));
+
+        let allInterviews = [];
+        if (comps.length > 0) {
+          const lists = await Promise.allSettled(
+            comps.map((company) => getInterviewsByCompany(company.id))
+          );
+          lists.forEach((r) => {
+            if (r.status === "fulfilled" && Array.isArray(r.value)) {
+              allInterviews = allInterviews.concat(r.value);
+            }
+          });
         }
-        if (c.status === "fulfilled") {
-          const d = c.value.data;
-          setCategories(Array.isArray(d) ? d : d.data || []);
-        }
-        if (co.status === "fulfilled") {
-          const d = co.value.data;
-          setCompanies(Array.isArray(d) ? d : d.data || []);
-        }
+        setInterviews(allInterviews);
       } finally {
         setLoading(false);
       }
     };
     fetchAll();
   }, []);
+
+  const { nowMonth, periodStart, prevStart } = useMemo(() => {
+    const nowDate = new Date();
+    const base = nowDate.getFullYear() * 12 + nowDate.getMonth();
+    const len = PERIOD_LENGTH[timeRange] || 1;
+    const start = base - (base % len);
+    return { nowMonth: base, periodStart: start, prevStart: start - len };
+  }, [timeRange]);
+
+  const inCurrent = (v) => {
+    const mi = monthIndex(toDate(v));
+    return mi != null && mi >= periodStart && mi <= nowMonth;
+  };
+  const inPrev = (v) => {
+    const mi = monthIndex(toDate(v));
+    return mi != null && mi >= prevStart && mi < periodStart;
+  };
+
+  // KPI (real data, scoped to the selected period vs the previous period)
+  const kpi = useMemo(() => {
+    const appsCur = applications.filter((a) => inCurrent(a.appliedAt)).length;
+    const appsPrev = applications.filter((a) => inPrev(a.appliedAt)).length;
+    const intCur = interviews.filter((i) => inCurrent(i.createdAt)).length;
+    const intPrev = interviews.filter((i) => inPrev(i.createdAt)).length;
+    const hiredCur = applications.filter(
+      (a) => inCurrent(a.appliedAt) && lowerStatus(a.status) === "accepted"
+    ).length;
+    const hiredPrev = applications.filter(
+      (a) => inPrev(a.appliedAt) && lowerStatus(a.status) === "accepted"
+    ).length;
+    const convCur = appsCur > 0 ? (hiredCur / appsCur) * 100 : 0;
+    const convPrev = appsPrev > 0 ? (hiredPrev / appsPrev) * 100 : 0;
+    return [
+      {
+        label: "Applications",
+        value: appsCur.toLocaleString(),
+        delta: fmtDelta(pctDelta(appsCur, appsPrev)),
+        up: appsCur >= appsPrev,
+        icon: MousePointerClick,
+        color: "bg-indigo-50 text-indigo-600",
+      },
+      {
+        label: "Interviews",
+        value: intCur.toLocaleString(),
+        delta: fmtDelta(pctDelta(intCur, intPrev)),
+        up: intCur >= intPrev,
+        icon: Users,
+        color: "bg-sky-50 text-sky-600",
+      },
+      {
+        label: "Hired",
+        value: hiredCur.toLocaleString(),
+        delta: fmtDelta(pctDelta(hiredCur, hiredPrev)),
+        up: hiredCur >= hiredPrev,
+        icon: Target,
+        color: "bg-amber-50 text-amber-600",
+      },
+      {
+        label: "Conversion",
+        value: `${convCur.toFixed(1)}%`,
+        delta: fmtDelta(pctDelta(convCur, convPrev)),
+        up: convCur >= convPrev,
+        icon: TrendingUp,
+        color: "bg-emerald-50 text-emerald-600",
+      },
+    ];
+  }, [applications, interviews, periodStart, prevStart]);
+
+  // Hiring funnel (real data, scoped to the selected period)
+  const funnel = useMemo(() => {
+    const apps = applications.filter((a) => inCurrent(a.appliedAt)).length;
+    const countByStatus = (s) =>
+      applications.filter((a) => inCurrent(a.appliedAt) && lowerStatus(a.status) === s).length;
+    const stages = [
+      { label: "Applications", value: apps, color: "bg-indigo-500" },
+      { label: "Reviewing", value: countByStatus("reviewing"), color: "bg-violet-500" },
+      { label: "Shortlisted", value: countByStatus("shortlisted"), color: "bg-fuchsia-500" },
+      {
+        label: "Interviews",
+        value: interviews.filter((i) => inCurrent(i.createdAt)).length,
+        color: "bg-emerald-500",
+      },
+      { label: "Hired", value: countByStatus("accepted"), color: "bg-teal-500" },
+    ];
+    const conversion = apps > 0 ? (stages[4].value / apps) * 100 : 0;
+    return { stages, conversion };
+  }, [applications, interviews, periodStart, prevStart]);
+
+  // Monthly applications trend over the last 12 months (real data)
+  const trend = useMemo(() => {
+    const nowDate = new Date();
+    const base = nowDate.getFullYear() * 12 + nowDate.getMonth();
+    const items = Array.from({ length: 12 }, (_, i) => {
+      const mi = base - (11 - i);
+      const d = new Date(Math.floor(mi / 12), mi % 12, 1);
+      return {
+        label: MONTHS[d.getMonth()],
+        count: applications.filter((a) => monthIndex(toDate(a.appliedAt)) === mi).length,
+      };
+    });
+    const last12 = items.reduce((sum, it) => sum + it.count, 0);
+    const prev12 = applications.filter((a) => {
+      const mi = monthIndex(toDate(a.appliedAt));
+      return mi != null && mi >= base - 24 && mi < base - 11;
+    }).length;
+    const yoy = prev12 === 0 ? (last12 > 0 ? 100 : 0) : Math.round(((last12 - prev12) / prev12) * 100);
+    return { items, yoy };
+  }, [applications]);
+  const maxTrend = Math.max(...trend.items.map((it) => it.count), 1);
 
   // Jobs by category (real data)
   const getJobCategoryId = (job) =>
@@ -123,8 +243,12 @@ function Reports() {
       .slice(0, 5);
   }, [jobs, companies]);
 
-  const maxTrend = Math.max(...MONTHLY_TREND);
-  const openJobs = jobs.filter((j) => String(j.status || "").toUpperCase() === "OPEN").length;
+  // Platform overview (real data)
+  const openJobs = jobs.filter((j) => lowerStatus(j.status) === "open").length;
+  const liveEvents = events.filter((e) => {
+    const s = lowerStatus(e.status);
+    return s !== "completed" && s !== "closed" && s !== "cancelled";
+  }).length;
 
   return (
     <div className="p-4 md:p-6 space-y-6 font-sans text-slate-800 bg-slate-50/50 min-h-screen">
@@ -146,7 +270,7 @@ function Reports() {
 
         <div className="flex items-center gap-3">
           <div className="flex items-center bg-slate-100 rounded-xl p-1 text-xs font-semibold overflow-x-auto">
-            {["This Month", "This Quarter", "This Year"].map((r) => (
+            {RANGES.map((r) => (
               <button
                 key={r}
                 onClick={() => setTimeRange(r)}
@@ -175,7 +299,7 @@ function Reports() {
         <>
           {/* KPI cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            {KPI.map((k) => {
+            {kpi.map((k) => {
               const Icon = k.icon;
               return (
                 <div
@@ -215,23 +339,23 @@ function Reports() {
                 </h2>
                 <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
                   <TrendingUp size={11} className="inline mr-0.5" />
-                  +22% YoY
+                  +{trend.yoy}% YoY
                 </span>
               </div>
               <div className="flex items-end justify-between gap-1.5 h-40 md:h-48">
-                {MONTHLY_TREND.map((v, i) => (
+                {trend.items.map((item, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
                     <div
                       className="w-full max-w-[32px] rounded-t-lg bg-indigo-500/80 hover:bg-indigo-600 transition-all duration-300"
-                      style={{ height: `${(v / maxTrend) * 100}%`, minHeight: 8 }}
-                      title={`${MONTHS[i]}: ${v}`}
+                      style={{ height: `${(item.count / maxTrend) * 100}%`, minHeight: 8 }}
+                      title={`${item.label}: ${item.count}`}
                     />
                   </div>
                 ))}
               </div>
               <div className="flex justify-between mt-2 text-[9px] md:text-[10px] text-slate-400 font-medium">
-                {MONTHS.map((m) => (
-                  <span key={m} className="flex-1 text-center">{m}</span>
+                {trend.items.map((item) => (
+                  <span key={item.label} className="flex-1 text-center">{item.label}</span>
                 ))}
               </div>
             </div>
@@ -242,7 +366,7 @@ function Reports() {
                 Hiring Funnel
               </h2>
               <div className="space-y-3.5">
-                {FUNNEL.map((f) => (
+                {funnel.stages.map((f) => (
                   <div key={f.label}>
                     <div className="flex items-center justify-between text-xs mb-1">
                       <span className="text-slate-600 font-medium">{f.label}</span>
@@ -253,7 +377,7 @@ function Reports() {
                     <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${f.color} rounded-full transition-all duration-500`}
-                        style={{ width: `${(f.value / FUNNEL[0].value) * 100}%` }}
+                        style={{ width: `${(f.value / (funnel.stages[0].value || 1)) * 100}%` }}
                       />
                     </div>
                   </div>
@@ -263,7 +387,7 @@ function Reports() {
                     Overall Conversion
                   </p>
                   <p className="text-lg font-extrabold text-emerald-600 mt-0.5">
-                    {((FUNNEL[4].value / FUNNEL[0].value) * 100).toFixed(1)}%
+                    {funnel.conversion.toFixed(1)}%
                   </p>
                 </div>
               </div>
@@ -358,7 +482,7 @@ function Reports() {
               { label: "Open Jobs", value: openJobs, icon: Briefcase, color: "text-emerald-600 bg-emerald-50" },
               { label: "Companies", value: companies.length, icon: Building2, color: "text-sky-600 bg-sky-50" },
               { label: "Categories", value: categories.length, icon: Award, color: "text-violet-600 bg-violet-50" },
-              { label: "Live Events", value: 12, icon: CalendarDays, color: "text-amber-600 bg-amber-50" },
+              { label: "Live Events", value: liveEvents, icon: CalendarDays, color: "text-amber-600 bg-amber-50" },
             ].map((s) => {
               const Icon = s.icon;
               return (

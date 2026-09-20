@@ -36,3 +36,8 @@ export const getInterviewsByCandidate = async (candidateUserId) => {
   const response = await api.get(`/interviews/candidate/${candidateUserId}`);
   return response.data;
 };
+
+export const getInterviewsByCompany = async (companyId) => {
+  const response = await api.get(`/interviews/company/${companyId}`);
+  return response.data;
+};
