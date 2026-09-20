@@ -20,6 +20,9 @@ import {
 } from '@/service/companyReviewApi';
 import { getStudentProfileByUserId } from '@/service/studentProfileApi';
 import { getCurrentUser } from '@/service/session';
+import Reveal from '@/components/Reveal';
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const toReviewArray = (data) => (Array.isArray(data) ? data : data?.data || []);
 
@@ -174,21 +177,21 @@ export default function CompanyDetail() {
       setReviews(toReviewArray(data));
     } catch (err) {
       const backendMessage = err.response?.data?.message || err.message;
-      alert(`Review failed: ${backendMessage}`);
+      toast.error(`Review failed: ${backendMessage}`);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (reviewId) => {
-    if (!window.confirm('Delete this review?')) return;
+    if (!(await confirmDialog({ message: 'Delete this review?', confirmLabel: 'Yes, do it', cancelLabel: 'Cancel', tone: 'danger' }))) return;
     try {
       await deleteCompanyReview(reviewId);
       setReviews((prev) => prev.filter((r) => r.id !== reviewId));
       setEditingId(null);
     } catch (err) {
       const backendMessage = err.response?.data?.message || err.message;
-      alert(`Delete failed: ${backendMessage}`);
+      toast.error(`Delete failed: ${backendMessage}`);
     }
   };
 
@@ -212,7 +215,7 @@ export default function CompanyDetail() {
       );
     } catch (err) {
       const backendMessage = err.response?.data?.message || err.message;
-      alert(`Like failed: ${backendMessage}`);
+      toast.error(`Like failed: ${backendMessage}`);
     }
   };
 
@@ -257,7 +260,7 @@ export default function CompanyDetail() {
         </button>
 
         {/* Company header */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+        <Reveal delay={100} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
@@ -292,10 +295,10 @@ export default function CompanyDetail() {
               </div>
             </div>
           </div>
-        </div>
+        </Reveal>
 
         {/* About */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm space-y-3">
+        <Reveal delay={150} className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm space-y-3">
           <h2 className="text-lg font-bold text-gray-900">About the Company</h2>
           <p className="text-sm text-gray-600 leading-relaxed">
             {company.description || 'No description provided yet.'}
@@ -303,10 +306,10 @@ export default function CompanyDetail() {
           <p className="text-xs text-gray-400">
             Registered on {formatDate(company.createdAt)}
           </p>
-        </div>
+        </Reveal>
 
         {/* Reviews */}
-        <div id="reviews" className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm space-y-5">
+        <Reveal delay={200} id="reviews" className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm space-y-5">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-gray-900">Reviews &amp; Ratings</h2>
             <span className="text-xs text-gray-500">{reviews.length} total</span>
@@ -471,7 +474,7 @@ export default function CompanyDetail() {
               })}
             </div>
           )}
-        </div>
+        </Reveal>
       </div>
     </div>
   );

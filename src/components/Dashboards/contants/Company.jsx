@@ -31,6 +31,8 @@ import {
 } from "@/service/CompanyApi";
 import { getAllUsers } from "@/service/userApi";
 import { getAllJob } from "@/service/JobApi";
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
@@ -334,7 +336,14 @@ function Company() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this company?")) return;
+    if (
+      !(await confirmDialog({
+        message: "Are you sure you want to delete this company?",
+        confirmLabel: "Delete",
+        cancelLabel: "Cancel",
+      }))
+    )
+      return;
     try {
       await deleteCompany(id);
       setCompanies((prev) => prev.filter((item) => item.id !== id));
@@ -348,7 +357,14 @@ function Company() {
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm(`Delete ${selectedIds.length} selected company(ies)?`)) return;
+    if (
+      !(await confirmDialog({
+        message: `Delete ${selectedIds.length} selected company(ies)?`,
+        confirmLabel: "Delete",
+        cancelLabel: "Cancel",
+      }))
+    )
+      return;
 
     try {
       await Promise.all(
@@ -365,7 +381,14 @@ function Company() {
 
   const handleDeleteLogo = async (company, e) => {
     e.stopPropagation();
-    if (!window.confirm("Remove company logo?")) return;
+    if (
+      !(await confirmDialog({
+        message: "Remove company logo?",
+        confirmLabel: "Remove",
+        cancelLabel: "Cancel",
+      }))
+    )
+      return;
 
     try {
       await deleteCompanyLogo(company.id);

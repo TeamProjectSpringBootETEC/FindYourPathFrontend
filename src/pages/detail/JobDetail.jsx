@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import Reveal from '@/components/Reveal';
 import {
   ArrowLeft,
   Share2,
@@ -12,6 +13,8 @@ import {
 import { getJobById } from '@/service/JobApi';
 import { getSavedJobsByStudent, createSavedJob, deleteSavedJob } from '@/service/savedJobApi';
 import { getCurrentUser } from '@/service/session';
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const getDeadlineInfo = (deadline) => {
   if (!deadline) return { text: 'No deadline', expired: false };
@@ -92,7 +95,7 @@ export default function JobDetail() {
     } catch (err) {
       console.error('Failed to save job:', err);
       const backendMessage = err.response?.data?.message || err.message;
-      alert(`Save failed: ${backendMessage}`);
+      toast.error(`Save failed: ${backendMessage}`);
     } finally {
       setSaving(false);
     }
@@ -154,7 +157,7 @@ export default function JobDetail() {
         </button>
 
         {/* Top Header Card */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm relative">
+        <Reveal delay={100} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm relative">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
 
             <div className="flex items-start gap-4">
@@ -212,13 +215,13 @@ export default function JobDetail() {
             </div>
 
           </div>
-        </div>
+        </Reveal>
 
         {/* Main Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* Left Column: Job Description, Requirements & Benefits */}
-          <div className="lg:col-span-2 space-y-8 bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm">
+          <Reveal direction="right" className="lg:col-span-2 space-y-8 bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm">
 
             {/* Job Description */}
             <div className="space-y-3">
@@ -265,10 +268,10 @@ export default function JobDetail() {
               )}
             </div>
 
-          </div>
+          </Reveal>
 
           {/* Right Column: Actions & Overviews */}
-          <div className="space-y-6">
+          <Reveal direction="left" delay={150} className="space-y-6">
 
             
             {/* Top Action Buttons Card */}
@@ -346,7 +349,7 @@ export default function JobDetail() {
               </button>
             </div>
 
-          </div>
+          </Reveal>
 
         </div>
 

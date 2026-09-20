@@ -13,6 +13,7 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
 } from "@/service/notificationApi";
+import Reveal from "@/components/Reveal";
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
@@ -85,7 +86,8 @@ export default function NotificationsPage() {
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-800">
       <div className="mx-auto max-w-3xl space-y-6">
-        <header className="rounded-2xl bg-white border border-slate-200/80 p-6 shadow-sm">
+        <Reveal delay={100} className="rounded-2xl bg-white border border-slate-200/80 p-6 shadow-sm">
+          <header>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-100">
@@ -123,8 +125,9 @@ export default function NotificationsPage() {
             </div>
           </div>
         </header>
+        </Reveal>
 
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden divide-y divide-slate-100">
+        <Reveal delay={150} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden divide-y divide-slate-100">
           {loading ? (
             <div className="py-16 text-center text-slate-400">
               <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-indigo-600" />
@@ -170,7 +173,7 @@ export default function NotificationsPage() {
               );
             })
           )}
-        </div>
+        </Reveal>
       </div>
     </div>
   );

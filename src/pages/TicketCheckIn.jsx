@@ -12,6 +12,7 @@ import {
   getRegistrationByTicketCode,
   checkInRegistration,
 } from "@/service/eventRegistrationApi";
+import Reveal from "@/components/Reveal";
 
 const fmtDateTime = (iso) => {
   if (!iso) return "—";
@@ -103,7 +104,7 @@ export default function TicketCheckIn() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg border border-slate-100 overflow-hidden">
+      <Reveal delay={100} direction="zoom" className="bg-white rounded-3xl shadow-xl w-full max-w-lg border border-slate-100 overflow-hidden">
         <div className="bg-indigo-600 px-8 py-5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-300">
             FindYourPath Event Ticket
@@ -180,7 +181,7 @@ export default function TicketCheckIn() {
             </Link>
           </div>
         </div>
-      </div>
+      </Reveal>
     </div>
   );
 }

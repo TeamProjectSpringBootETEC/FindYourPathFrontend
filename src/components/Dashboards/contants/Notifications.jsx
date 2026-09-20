@@ -16,6 +16,8 @@ import {
   AlertTriangle,
   Clock,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const API_BASE_URL = "http://localhost:8089/api/notifications";
 const USERS_API_URL = "http://localhost:8089/api/v1/users";
@@ -114,7 +116,7 @@ function Notifications() {
       fetchNotifications();
     } catch (err) {
       console.error("Failed to send notification:", err);
-      alert(err.response?.data?.message || "Failed to send notification.");
+      toast.error(err.response?.data?.message || "Failed to send notification.");
     } finally {
       setSubmitting(false);
     }
@@ -132,7 +134,7 @@ function Notifications() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this notification?")) return;
+    if (!(await confirmDialog({ message: "Delete this notification?", confirmLabel: "Delete", cancelLabel: "Cancel" }))) return;
     try {
       await axios.delete(`${API_BASE_URL}/${id}`);
       setNotifications((prev) => prev.filter((item) => item.id !== id));

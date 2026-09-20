@@ -13,6 +13,7 @@ import ExperienceSection from "@/components/Profile/ExperienceSection";
 import EducationSection from "@/components/Profile/EducationSection";
 import SkillsSection from "@/components/Profile/SkillsSection";
 import AccountForm from "@/components/Profile/AccountForm";
+import Reveal from "@/components/Reveal";
 
 function NeedProfileCard({ onGo }) {
   return (
@@ -86,16 +87,18 @@ export default function StudentDashboard() {
     <div className="min-h-screen bg-slate-50 p-4 font-sans text-slate-800 md:p-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 lg:flex-row lg:items-start">
         {/* Sidebar */}
-        <aside className="w-full shrink-0 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm lg:sticky lg:top-20 lg:w-64">
+        <Reveal delay={100} direction="right" className="w-full shrink-0 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-sm lg:sticky lg:top-20 lg:w-64">
+          <aside className="space-y-2">
           <div className="mb-2 px-3 pb-3 pt-1">
             <p className="text-sm font-bold text-slate-900">My Dashboard</p>
             <p className="text-xs text-slate-400">Manage your profile</p>
           </div>
           <StudentSidebar active={active} onSelect={setActive} />
-        </aside>
+          </aside>
+        </Reveal>
 
         {/* Content */}
-        <div className="min-w-0 flex-1 space-y-6">
+        <Reveal delay={150} direction="left" className="min-w-0 flex-1 space-y-6">
           <HeroCard
             user={user}
             profile={profile}
@@ -176,7 +179,7 @@ export default function StudentDashboard() {
               />
             </section>
           )}
-        </div>
+        </Reveal>
       </div>
     </div>
   );

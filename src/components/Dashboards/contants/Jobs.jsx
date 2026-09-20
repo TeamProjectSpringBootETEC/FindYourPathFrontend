@@ -24,6 +24,8 @@ import {
 import { Link } from "react-router-dom";
 import { getAllJob, getAllJobCategories, createJob, updateJob, deleteJob } from "@/service/JobApi";
 import { getAllCompanies } from "@/service/CompanyApi";
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
@@ -366,7 +368,7 @@ export default function Jobs() {
   };
 
   const handleDeleteJob = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this job posting?")) return;
+    if (!(await confirmDialog({ message: "Are you sure you want to delete this job posting?", confirmLabel: "Delete", cancelLabel: "Cancel" }))) return;
     try {
       setDeletingId(id);
       await deleteJob(id);
@@ -382,7 +384,7 @@ export default function Jobs() {
 
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm(`Delete ${selectedIds.length} selected job(s)?`)) return;
+    if (!(await confirmDialog({ message: `Delete ${selectedIds.length} selected job(s)?`, confirmLabel: "Delete", cancelLabel: "Cancel" }))) return;
     try {
       await Promise.all(
         selectedIds.map((id) => deleteJob(id))

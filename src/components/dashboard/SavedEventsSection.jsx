@@ -5,6 +5,8 @@ import {
   getRegistrationsByUserId,
   cancelRegistration,
 } from "@/service/eventRegistrationApi";
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const fmtDate = (iso) => {
   if (!iso) return "—";
@@ -49,14 +51,14 @@ export default function SavedEventsSection({ userId }) {
   }, [userId]);
 
   const handleRemove = async (rec) => {
-    if (!window.confirm(`Cancel registration for "${rec.eventTitle}"?`)) return;
+    if (!(await confirmDialog({ message: `Cancel registration for "${rec.eventTitle}"?`, confirmLabel: "Confirm", cancelLabel: "Cancel" }))) return;
     try {
       setRemovingId(rec.id);
       await cancelRegistration(rec.id);
       setItems((prev) => prev.filter((item) => item.id !== rec.id));
     } catch (err) {
       console.error("Failed to cancel registration:", err);
-      alert("Failed to cancel registration.");
+      toast.error("Failed to cancel registration.");
     } finally {
       setRemovingId(null);
     }

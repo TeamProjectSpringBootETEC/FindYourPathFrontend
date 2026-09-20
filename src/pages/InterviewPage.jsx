@@ -6,6 +6,7 @@ import QuizSection from "@/components/Interview/QuizSection";
 import OralSection from "@/components/Interview/OralSection";
 import VoiceInterviewController from "@/components/Interview/VoiceInterviewController";
 import InterviewResultCard from "@/components/Interview/InterviewResultCard";
+import Reveal from "@/components/Reveal";
 
 export default function InterviewPage() {
   const { interviewId } = useParams();
@@ -120,7 +121,8 @@ export default function InterviewPage() {
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-800">
       <div className="mx-auto max-w-3xl space-y-6">
-        <header className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white p-6 shadow-lg shadow-indigo-100">
+        <Reveal delay={100} direction="zoom" className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white p-6 shadow-lg shadow-indigo-100">
+          <header>
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center">
               <Mic2 size={20} />
@@ -138,6 +140,7 @@ export default function InterviewPage() {
             </span>
           </div>
         </header>
+        </Reveal>
 
         {isDone ? (
           <InterviewResultCard interview={interview} />

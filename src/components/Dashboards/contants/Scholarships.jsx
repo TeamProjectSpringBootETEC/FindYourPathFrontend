@@ -12,6 +12,8 @@ import {
   BadgeCheck,
   CircleDollarSign,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 // NOTE: No Scholarships API exists yet in the Spring backend.
 // This page is a front-end design with local sample data only.
@@ -105,8 +107,15 @@ function Scholarships() {
     setEditingScholarship(null);
   };
 
-  const handleDelete = (id) => {
-    if (!window.confirm("Delete this scholarship?")) return;
+  const handleDelete = async (id) => {
+    if (
+      !(await confirmDialog({
+        message: "Delete this scholarship?",
+        confirmLabel: "Delete",
+        cancelLabel: "Cancel",
+      }))
+    )
+      return;
     setScholarships((prev) => prev.filter((item) => item.id !== id));
   };
 

@@ -1,241 +1,248 @@
-import { BriefcaseBusiness, Building2Icon, Monitor, PenTool, ShieldCheck } from "lucide-react";
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Reveal from "@/components/Reveal";
+import {
+  BriefcaseBusiness,
+  Building2,
+  Monitor,
+  ShieldCheck,
+  Search,
+  MapPin,
+  TrendingUp,
+  ArrowRight,
+} from "lucide-react";
+
+const featuredJobs = [
+  {
+    initial: "S",
+    logoBg: "bg-blue-600",
+    title: "Frontend Developer",
+    company: "SmartTech Co., Ltd.",
+    location: "Phnom Penh, Cambodia",
+    type: "Full-time",
+    salary: "$1,200/mo",
+  },
+  {
+    initial: "G",
+    logoBg: "bg-purple-600",
+    title: "Digital Marketing Specialist",
+    company: "Growth Agency",
+    location: "Phnom Penh, Cambodia",
+    type: "Marketing",
+    salary: "$800/mo",
+  },
+  {
+    initial: "A",
+    logoBg: "bg-emerald-600",
+    title: "UI/UX Designer",
+    company: "Creative Studio",
+    location: "Siem Reap, Cambodia",
+    type: "Part-time",
+    salary: "$700/mo",
+  },
+];
+
+const heroStats = [
+  { value: "50k+", label: "Active Jobs" },
+  { value: "850+", label: "Companies" },
+  { value: "94%", label: "Match Score" },
+];
 
 function Banner() {
+  const navigate = useNavigate();
+
   return (
-    <>
-      <section className="relative overflow-hidden">
-        {/* Background Decorations */}
-        <div className="absolute -left-20 top-10 h-64 w-64 rounded-full bg-blue-100/60 blur-3xl"></div>
-        <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-blue-200/40 blur-3xl"></div>
+    <section className="relative overflow-hidden">
+      {/* Background Decorations */}
+      <div className="absolute -left-20 top-10 h-64 w-64 rounded-full bg-blue-100/60 blur-3xl"></div>
+      <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-purple-100/40 blur-3xl"></div>
 
-        <div className="relative mx-auto max-w-7xl px-6 py-16 lg:px-8 lg:py-12">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            {/* ================= LEFT ================= */}
-            <div className="max-w-2xl">
-              {/* Badge */}
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-blue-100 px-5 py-2 text-sm font-semibold text-blue-700">
-                <BriefcaseBusiness />
-                Your Future Starts Here
+      <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-20">
+        <div className="grid items-center gap-14 lg:grid-cols-2">
+          {/* ================= LEFT ================= */}
+          <Reveal direction="right" className="max-w-2xl">
+            {/* Badge */}
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-blue-50 border border-blue-100 px-4 py-1.5 text-sm font-semibold text-blue-700">
+              <BriefcaseBusiness className="w-4 h-4" />
+              Your Future Starts Here
+            </div>
+
+            {/* Heading */}
+            <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-5xl md:text-6xl">
+              Find Your Dream
+              <span className="block text-blue-600">Job Today</span>
+            </h1>
+
+            {/* Description */}
+            <p className="mt-5 max-w-xl text-base leading-8 text-slate-600 sm:text-lg">
+              Explore thousands of job opportunities, get hired by top
+              companies, and build the career you want.
+            </p>
+
+            {/* Search Box */}
+            <div className="mt-8 flex max-w-2xl flex-col gap-2 rounded-2xl bg-white p-2 shadow-xl shadow-blue-100 sm:flex-row sm:items-center">
+              <div className="flex flex-1 items-center gap-3 rounded-xl px-4 py-3">
+                <Search className="h-5 w-5 text-blue-500" />
+                <input
+                  type="text"
+                  placeholder="Search for jobs, skills, or companies..."
+                  className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 md:text-base"
+                  onKeyDown={(e) => e.key === "Enter" && navigate("/job")}
+                />
               </div>
 
-              {/* Heading */}
-              <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-slate-900 md:text-6xl">
-                Find Your Dream
-                <span className="block text-blue-600">Job & Scholarships </span>
-              </h1>
+              <button
+                onClick={() => navigate("/job")}
+                className="rounded-xl bg-blue-600 px-8 py-3 font-semibold text-white transition hover:bg-blue-700 hover:shadow-lg"
+              >
+                Search
+              </button>
+            </div>
 
-              {/* Description */}
-              <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
-                Explore thousands of job opportunities, get hired by top
-                companies, and build the career you want.
-              </p>
-
-              {/* Search Box */}
-              <div className="mt-8 flex max-w-2xl flex-col gap-3 rounded-2xl bg-white p-3 shadow-xl shadow-blue-100 md:flex-row">
-                {/* Search Input */}
-                <div className="flex flex-1 items-center gap-3 rounded-xl px-4 py-3">
-                  <svg
-                    className="h-6 w-6 text-blue-500"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"
-                    />
-                  </svg>
-
-                  <input
-                    type="text"
-                    placeholder="Search for jobs, skills, or companies..."
-                    className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 md:text-base"
-                  />
-                </div>
-
-                {/* Search Button */}
-                <button className="rounded-xl bg-blue-600 px-8 py-3 font-semibold text-white transition hover:bg-blue-700 hover:shadow-lg">
-                  Search
+            {/* Popular searches */}
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <span className="font-medium text-slate-400">Popular:</span>
+              {["Frontend", "Design", "Internship"].map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => navigate("/job")}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1 font-medium text-slate-600 transition-colors hover:border-blue-300 hover:text-blue-600"
+                >
+                  {tag}
                 </button>
+              ))}
+            </div>
+
+            {/* Features */}
+            <div className="mt-8 flex flex-wrap gap-6 text-sm text-slate-600">
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                  <Building2 className="w-4 h-4" />
+                </span>
+                <span>Top Companies</span>
               </div>
 
-              {/* Features */}
-              <div className="mt-8 flex flex-wrap gap-6 text-sm text-slate-600">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-                    <Building2Icon />
-                  </span>
-                  <span>Top Companies</span>
-                </div>
+              <div className="hidden h-8 w-px bg-slate-300 sm:block"></div>
 
-                <div className="hidden h-8 w-px bg-slate-300 sm:block"></div>
-
-                <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-                    <Monitor />
-                  </span>
-                  <span>Remote & On-site</span>
-                </div>
-
-                <div className="hidden h-8 w-px bg-slate-300 sm:block"></div>
-
-                <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-                    <ShieldCheck />
-                  </span>
-                  <span>Safe & Trusted</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                  <Monitor className="w-4 h-4" />
+                </span>
+                <span>Remote & On-site</span>
               </div>
 
-              {/* CTA */}
-              <div className="mt-8 flex flex-wrap gap-4">
-                <Link
-                  to="/job"
-                  className="rounded-full bg-blue-600 px-7 py-3 font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700"
-                >
-                  Explore Jobs →
-                </Link>
+              <div className="hidden h-8 w-px bg-slate-300 sm:block"></div>
 
-                <Link
-                  to="/companies"
-                  className="rounded-full border border-blue-200 bg-white px-7 py-3 font-semibold text-blue-600 transition hover:bg-blue-50"
-                >
-                  View Companies
-                </Link>
+              <div className="flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                  <ShieldCheck className="w-4 h-4" />
+                </span>
+                <span>Safe & Trusted</span>
               </div>
             </div>
 
-            {/* ================= RIGHT ================= */}
-            <div className="relative">
-              {/* Main Illustration Container */}
-              <div className="relative mx-auto max-w-xl">
-                {/* Blue Circle Background */}
-                <div className="absolute right-0 top-10 h-80 w-80 rounded-full bg-blue-100 md:h-96 md:w-96"></div>
+            {/* CTA */}
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Link
+                to="/job"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-7 py-3 font-semibold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-700 hover:-translate-y-0.5"
+              >
+                Explore Jobs <ArrowRight className="w-4 h-4" />
+              </Link>
 
-                {/* Job Opportunities Bubble */}
-                <div className="absolute left-0 top-5 z-20 flex items-center gap-3 rounded-2xl bg-blue-600 px-5 py-4 text-white shadow-xl">
-                  <BriefcaseBusiness />
-                  <div>
-                    <p className="text-xs opacity-80">New</p>
-                    <p className="font-bold">Job Opportunities</p>
-                  </div>
+              <Link
+                to="/companies"
+                className="rounded-full border border-slate-200 bg-white px-7 py-3 font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-600"
+              >
+                View Companies
+              </Link>
+            </div>
+          </Reveal>
+
+          {/* ================= RIGHT ================= */}
+          <Reveal direction="left" delay={120} className="relative">
+            <div className="absolute -inset-4 bg-gradient-to-tr from-blue-100 via-sky-50 to-purple-100 rounded-[3rem] blur-2xl opacity-60"></div>
+
+            <div className="relative bg-white/80 backdrop-blur border border-white rounded-3xl p-5 sm:p-6 shadow-2xl">
+              {/* Panel Header */}
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-full bg-rose-400" />
+                  <span className="w-3 h-3 rounded-full bg-amber-400" />
+                  <span className="w-3 h-3 rounded-full bg-emerald-400" />
                 </div>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-blue-600">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  Trending Now
+                </span>
+              </div>
 
-                {/* Person */}
-                <div className="relative z-10 flex justify-center pt-20">
-                  <div className="flex h-72 w-72 items-center justify-center rounded-full bg-blue-200/50 md:h-80 md:w-80">
-                    {/* Simple CSS Character */}
-                    <div className="relative">
-                      {/* Head */}
-                      <div className="mx-auto h-28 w-28 rounded-full bg-orange-200 shadow-md">
-                        {/* Hair */}
-                        <div className="absolute left-1/2 top-0 h-14 w-28 -translate-x-1/2 rounded-t-full bg-slate-900"></div>
+              {/* Job List */}
+              <div className="space-y-3">
+                {featuredJobs.map((job) => (
+                  <button
+                    key={job.title}
+                    onClick={() => navigate("/job")}
+                    className="group flex w-full items-center gap-3 rounded-2xl bg-white border border-slate-100 p-3 text-left shadow-sm transition-all hover:border-blue-200 hover:shadow-md"
+                  >
+                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${job.logoBg} text-white font-bold text-lg`}>
+                      {job.initial}
+                    </div>
 
-                        {/* Eyes */}
-                        <div className="absolute left-8 top-16 h-2 w-2 rounded-full bg-slate-800"></div>
-                        <div className="absolute right-8 top-16 h-2 w-2 rounded-full bg-slate-800"></div>
-
-                        {/* Smile */}
-                        <div className="absolute bottom-6 left-1/2 h-2 w-8 -translate-x-1/2 rounded-full bg-slate-700"></div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                        {job.title}
+                      </p>
+                      <p className="truncate text-xs font-medium text-slate-500">
+                        {job.company}
+                      </p>
+                      <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> {job.location}
+                        </span>
+                        <span>•</span>
+                        <span>{job.type}</span>
                       </div>
-
-                      {/* Body */}
-                      <div className="mx-auto mt-2 h-40 w-52 rounded-t-[80px] bg-blue-600 shadow-xl"></div>
-
-                      {/* Laptop */}
-                      <div className="absolute -bottom-10 left-1/2 z-30 -translate-x-1/2">
-                        <div className="h-24 w-40 rounded-lg border-4 border-slate-500 bg-slate-300 shadow-xl md:h-28 md:w-48">
-                          <div className="flex h-full items-center justify-center">
-                            <div className="h-6 w-6 rounded-full bg-slate-400"></div>
-                          </div>
-                        </div>
-
-                        <div className="mx-auto h-3 w-48 rounded-b-xl bg-slate-500 md:w-56"></div>
-                      </div>
                     </div>
+
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-bold text-blue-600">{job.salary}</p>
+                      <p className="text-[10px] uppercase tracking-wide text-slate-400">monthly</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Panel Stats */}
+              <div className="mt-6 grid grid-cols-3 gap-3 border-t border-slate-100 pt-5 text-center">
+                {heroStats.map((stat) => (
+                  <div key={stat.label}>
+                    <p className="text-2xl font-black text-slate-900">{stat.value}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      {stat.label}
+                    </p>
                   </div>
-                </div>
-
-                {/* Job Card */}
-                <div className="absolute right-0 top-24 z-20 hidden w-64 rounded-2xl bg-white p-4 shadow-2xl md:block">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-800">
-                      Available Jobs
-                    </span>
-
-                    <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-600">
-                      120+
-                    </span>
-                  </div>
-
-                  {/* Job 1 */}
-                  <div className="mb-3 flex items-center gap-3 rounded-xl bg-blue-50 p-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white">
-                      &lt;/&gt;
-                    </div>
-
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-slate-800">
-                        Frontend Developer
-                      </p>
-                      <p className="text-xs text-slate-500">Phnom Penh</p>
-                    </div>
-                  </div>
-
-                  {/* Job 2 */}
-                  <div className="mb-3 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-                      <BriefcaseBusiness />
-                    </div>
-
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-slate-800">
-                        Backend Developer
-                      </p>
-                      <p className="text-xs text-slate-500">Remote</p>
-                    </div>
-                  </div>
-
-                  {/* Job 3 */}
-                  <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-                      <PenTool />
-                    </div>
-
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-slate-800">
-                        UI/UX Designer
-                      </p>
-                      <p className="text-xs text-slate-500">Phnom Penh</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom Card */}
-                <div className="absolute -bottom-5 left-4 z-30 rounded-2xl bg-white px-5 py-4 shadow-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">
-                      ✓
-                    </div>
-
-                    <div>
-                      <p className="text-sm font-bold text-slate-800">
-                        Your Career
-                      </p>
-                      <p className="text-xs text-slate-500">Starts Today 🚀</p>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
-          </div>
+
+            {/* Floating chips */}
+            <div className="absolute -top-4 right-4 z-20 hidden rounded-full bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-200 sm:block">
+              120+ New Jobs
+            </div>
+
+            <div className="absolute -bottom-5 left-6 z-20 flex items-center gap-3 rounded-2xl bg-white px-5 py-3 shadow-xl">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-green-100 text-green-600">
+                ✓
+              </span>
+              <span className="text-sm font-bold text-slate-800">
+                Your Career Starts Today <span className="inline-block">🚀</span>
+              </span>
+            </div>
+          </Reveal>
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }
 

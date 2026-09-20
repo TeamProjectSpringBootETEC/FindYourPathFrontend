@@ -23,6 +23,9 @@ import {
 } from '@/service/eventRegistrationApi';
 import { getCurrentUser } from '@/service/session';
 import EventRegistrationModal from '@/components/EventRegistrationModal';
+import Reveal from '@/components/Reveal';
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const getFormatKey = (eventType = '') => {
   const type = eventType.toLowerCase();
@@ -126,14 +129,14 @@ export default function EventDetail() {
     fetchEvent();
   }, [id]);
 
-  const handleRegisterClick = () => {
+  const handleRegisterClick = async () => {
     const user = getCurrentUser();
     if (!user) {
       navigate('/login');
       return;
     }
     if (isSaved) {
-      if (!window.confirm('Cancel your registration for this event?')) return;
+      if (!(await confirmDialog({ message: 'Cancel your registration for this event?', confirmLabel: 'Yes, do it', cancelLabel: 'Cancel', tone: 'danger' }))) return;
       if (registering) return;
       setRegistering(true);
       cancelRegistration(registrationId)
@@ -143,7 +146,7 @@ export default function EventDetail() {
         })
         .catch((err) => {
           console.error('Failed to cancel registration:', err);
-          alert(err.response?.data?.message || 'Failed to cancel registration.');
+          toast.error(err.response?.data?.message || 'Failed to cancel registration.');
         })
         .finally(() => setRegistering(false));
       return;
@@ -219,7 +222,7 @@ export default function EventDetail() {
         </button>
 
         {/* Top Header Card */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm relative">
+        <Reveal delay={100} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm relative">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
 
             <div className="flex items-start gap-4">
@@ -271,13 +274,13 @@ export default function EventDetail() {
             </div>
 
           </div>
-        </div>
+        </Reveal>
 
         {/* Main Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
           {/* Left Column: Gallery, About, Agenda & Perks */}
-          <div className="lg:col-span-2 space-y-6 bg-white border border-gray-200 rounded-2xl p-4 md:p-6 shadow-sm">
+          <Reveal direction="right" className="lg:col-span-2 space-y-6 bg-white border border-gray-200 rounded-2xl p-4 md:p-6 shadow-sm">
 
             {/* Event Image Gallery */}
             {event.images.length > 0 && (() => {
@@ -402,10 +405,10 @@ export default function EventDetail() {
               </div>
             </div>
 
-          </div>
+          </Reveal>
 
           {/* Right Column: Actions & Overviews */}
-          <div className="space-y-6">
+          <Reveal direction="left" delay={150} className="space-y-6">
 
             {/* Top Action Buttons Card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-3">
@@ -488,7 +491,7 @@ export default function EventDetail() {
               </button>
             </div>
 
-          </div>
+          </Reveal>
 
         </div>
 

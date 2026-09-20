@@ -14,6 +14,9 @@ import { useNavigate } from 'react-router-dom';
 import { getAllJob, getAllJobFields, getAllJobCategories } from '@/service/JobApi';
 import { getSavedJobsByStudent, createSavedJob, deleteSavedJob } from '@/service/savedJobApi';
 import { getCurrentUser } from '@/service/session';
+import Reveal from '@/components/Reveal';
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -136,7 +139,7 @@ export default function Job() {
     } catch (err) {
       console.error('Failed to save job:', err);
       const backendMessage = err.response?.data?.message || err.message;
-      alert(`Save failed: ${backendMessage}`);
+      toast.error(`Save failed: ${backendMessage}`);
     } finally {
       setSavingId(null);
     }
@@ -294,7 +297,7 @@ export default function Job() {
       <div className="max-w-6xl mx-auto">
 
         {/* Top Search Bar */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-2 shadow-sm flex items-center justify-between mb-8">
+        <Reveal delay={100} className="bg-white border border-gray-200 rounded-2xl p-2 shadow-sm flex items-center justify-between mb-8">
           <div className="flex items-center gap-3 px-3 w-full">
             <Search className="w-5 h-5 text-gray-400 shrink-0" />
             <input
@@ -318,12 +321,13 @@ export default function Job() {
           >
             Search
           </button>
-        </div>
+        </Reveal>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
           {/* Left Sidebar: Filters */}
-          <aside className="lg:col-span-1 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm h-fit space-y-6">
+          <Reveal delay={150} direction="right" className="lg:col-span-1 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm h-fit space-y-6">
+            <aside className="space-y-6">
             <div className="flex items-center justify-between pb-4 border-b border-gray-100">
               <h2 className="font-bold text-lg text-gray-900">Filters</h2>
               <button
@@ -423,10 +427,12 @@ export default function Job() {
             >
               Apply Filters
             </button>
-          </aside>
+            </aside>
+          </Reveal>
 
           {/* Main Content Area */}
-          <main className="lg:col-span-3 space-y-6">
+          <Reveal delay={200} direction="left" className="lg:col-span-3 space-y-6">
+            <main className="space-y-6">
 
             {/* Opportunities Header & Sorting */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -613,6 +619,7 @@ export default function Job() {
             )}
 
           </main>
+          </Reveal>
 
         </div>
       </div>

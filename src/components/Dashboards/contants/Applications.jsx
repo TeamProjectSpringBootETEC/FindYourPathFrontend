@@ -13,6 +13,8 @@ import {
   Briefcase,
   Sparkles,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 // Data comes from the backend via GET /api/applications (applicationApi.getAllApplications).
 const STATUS_STYLES = {
@@ -52,7 +54,7 @@ function Applications() {
       );
     } catch (err) {
       console.error("AI check failed:", err);
-      alert("AI check failed: " + (err.response?.data?.message || err.message));
+      toast.error("AI check failed: " + (err.response?.data?.message || err.message));
     } finally {
       setAssessingId(null);
     }
@@ -316,7 +318,7 @@ function Applications() {
                           AI Check
                         </button>
                         <button
-                          onClick={() => alert("Status update coming soon")}
+                          onClick={() => toast.success("Status update coming soon")}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 text-violet-700 hover:bg-violet-100 rounded-lg text-xs font-semibold transition"
                         >
                           Update Status

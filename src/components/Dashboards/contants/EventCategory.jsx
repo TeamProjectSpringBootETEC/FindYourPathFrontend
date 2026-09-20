@@ -20,6 +20,8 @@ import {
   updateEventCategory,
   deleteEventCategory,
 } from "@/service/eventApi";
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
@@ -155,7 +157,13 @@ function EventCategory() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this event category?"))
+    if (
+      !(await confirmDialog({
+        message: "Are you sure you want to delete this event category?",
+        confirmLabel: "Delete",
+        cancelLabel: "Cancel",
+      }))
+    )
       return;
     try {
       setDeletingId(id);

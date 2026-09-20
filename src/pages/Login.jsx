@@ -3,6 +3,8 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle } from 'lucide-react';
 import { loginUser } from '@/service/authApi';
 import GoogleLogin from '@/components/GoogleLogin';
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -166,7 +168,7 @@ export default function Login() {
           {/* LinkedIn Button */}
           <button
             type="button"
-            onClick={() => alert('LinkedIn sign-in clicked')}
+            onClick={() => toast('LinkedIn sign-in clicked', { icon: '🔗' })}
             className="flex items-center justify-center gap-2 border border-gray-200 hover:bg-gray-50 py-3 rounded-xl text-sm font-semibold text-gray-700 transition-colors shadow-sm"
           >
             <svg className="w-4 h-4 fill-[#0A66C2]" viewBox="0 0 24 24">

@@ -27,6 +27,8 @@ import {
   updateJobCategory,
   deleteJobCategory,
 } from "@/service/JobApi";
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
@@ -345,7 +347,13 @@ function CategoryJob() {
   };
 
   const handleDeleteCategory = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this category?")) {
+    if (
+      !(await confirmDialog({
+        message: "Are you sure you want to delete this category?",
+        confirmLabel: "Delete",
+        cancelLabel: "Cancel",
+      }))
+    ) {
       return;
     }
     try {
@@ -364,9 +372,11 @@ function CategoryJob() {
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     if (
-      !window.confirm(
-        `Delete ${selectedIds.length} selected job categor${selectedIds.length > 1 ? "ies" : "y"}?`
-      )
+      !(await confirmDialog({
+        message: `Delete ${selectedIds.length} selected job categor${selectedIds.length > 1 ? "ies" : "y"}?`,
+        confirmLabel: "Delete",
+        cancelLabel: "Cancel",
+      }))
     ) {
       return;
     }

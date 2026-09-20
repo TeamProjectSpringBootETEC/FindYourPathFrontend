@@ -20,6 +20,9 @@ import {
 } from '@/service/eventRegistrationApi';
 import { getCurrentUser } from '@/service/session';
 import EventRegistrationModal from '@/components/EventRegistrationModal';
+import Reveal from '@/components/Reveal';
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -127,7 +130,7 @@ export default function Events() {
     }
     const recordId = registeredMap[eventId];
     if (recordId) {
-      if (!window.confirm('Cancel your registration for this event?')) return;
+      if (!(await confirmDialog({ message: 'Cancel your registration for this event?', confirmLabel: 'Yes, do it', cancelLabel: 'Cancel', tone: 'danger' }))) return;
       if (registeringId === eventId) return;
       setRegisteringId(eventId);
       try {
@@ -139,7 +142,7 @@ export default function Events() {
         });
       } catch (err) {
         console.error('Failed to cancel registration:', err);
-        alert(err.response?.data?.message || 'Failed to cancel registration.');
+        toast.error(err.response?.data?.message || 'Failed to cancel registration.');
       } finally {
         setRegisteringId(null);
       }
@@ -305,13 +308,13 @@ export default function Events() {
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header Section */}
-        <div className="text-center max-w-2xl mx-auto space-y-2">
+        <Reveal className="text-center max-w-2xl mx-auto space-y-2">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Discover Your Next Career Breakthrough</h1>
           <p className="text-sm text-gray-500">Join exclusive workshops, global career fairs, and expert-led seminars to accelerate your professional growth.</p>
-        </div>
+        </Reveal>
 
         {/* Top Search Bar */}
-        <div className="max-w-3xl mx-auto w-full bg-white border border-gray-200 rounded-2xl p-2 shadow-sm flex items-center justify-between">
+        <Reveal delay={100} className="max-w-3xl mx-auto w-full bg-white border border-gray-200 rounded-2xl p-2 shadow-sm flex items-center justify-between">
           <div className="flex items-center gap-3 px-3 w-full">
             <Search className="w-5 h-5 text-gray-400 shrink-0" />
             <input
@@ -332,12 +335,13 @@ export default function Events() {
           >
             Find Events
           </button>
-        </div>
+        </Reveal>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           
           {/* Left Sidebar: Filters */}
-          <aside className="lg:col-span-1 space-y-6">
+          <Reveal delay={150} direction="right" className="lg:col-span-1 space-y-6">
+            <aside className="space-y-6">
             
             <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-gray-100">
@@ -438,10 +442,12 @@ export default function Events() {
               </button>
             </div>
 
-          </aside>
+            </aside>
+          </Reveal>
 
           {/* Main Content Area */}
-          <main className="lg:col-span-3 space-y-6">
+          <Reveal delay={200} direction="left" className="lg:col-span-3 space-y-6">
+            <main className="space-y-6">
             
             {/* Search count & Sort header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -630,6 +636,7 @@ export default function Events() {
             )}
 
           </main>
+          </Reveal>
 
         </div>
       </div>

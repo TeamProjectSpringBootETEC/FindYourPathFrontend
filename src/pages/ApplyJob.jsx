@@ -10,6 +10,7 @@ import CvUploadStep from "@/components/ApplySteps/CvUploadStep";
 import PersonalStep from "@/components/ApplySteps/PersonalStep";
 import ExperienceStep from "@/components/ApplySteps/ExperienceStep";
 import EducationStep from "@/components/ApplySteps/EducationStep";
+import Reveal from "@/components/Reveal";
 
 const emptyExperience = { companyName: "", position: "", startDate: "", endDate: "" };
 const emptyEducation = { universityName: "", degree: "", major: "", startYear: "", graduationYear: "" };
@@ -176,13 +177,13 @@ export default function ApplyJob() {
         </button>
 
         {job && (
-          <div className="text-center space-y-1">
+          <Reveal className="text-center space-y-1">
             <h1 className="text-2xl font-bold text-gray-900">Apply for {job.title}</h1>
             <p className="text-sm text-gray-500">{job.companyName} • {job.location}</p>
-          </div>
+          </Reveal>
         )}
 
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm">
+        <Reveal delay={100} className="bg-white border border-gray-200 rounded-2xl shadow-sm">
           <div className="border-b border-gray-100 px-6 py-5">
             <StepIndicator currentStep={step} />
           </div>
@@ -272,7 +273,7 @@ export default function ApplyJob() {
               </button>
             )}
           </div>
-        </div>
+        </Reveal>
       </div>
     </div>
   );
