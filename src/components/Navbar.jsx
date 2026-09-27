@@ -9,14 +9,11 @@ function Navbar() {
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem("user") || "null");
 
-  const [selectedLang, setSelectedLang] = useState("English");
-  const [langOpen, setLangOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [photoUrl, setPhotoUrl] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const langDropdownRef = useRef(null);
   const profileDropdownRef = useRef(null);
 
   const initial = (user?.name || "U").trim().charAt(0).toUpperCase();
@@ -60,20 +57,10 @@ function Navbar() {
     { name: "About Us", path: "/about" },
   ];
 
-  const languages = [
-    { code: "en", name: "English" },
-    { code: "km", name: "Khmer" },
-  ];
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        langDropdownRef.current &&
-        !langDropdownRef.current.contains(event.target)
-      ) {
-        setLangOpen(false);
-      }
       if (
         profileDropdownRef.current &&
         !profileDropdownRef.current.contains(event.target)
@@ -137,90 +124,6 @@ function Navbar() {
 
         {/* ================= RIGHT CONTROLS ================= */}
         <div className="flex items-center gap-3 sm:gap-6">
-          {/* ================= LANGUAGE (desktop) ================= */}
-          <div
-            className="hidden lg:block relative z-[100]"
-            ref={langDropdownRef}
-          >
-            <button
-              type="button"
-              onClick={() => setLangOpen(!langOpen)}
-              className="flex items-center gap-1.5 font-medium text-gray-700 transition-colors hover:text-blue-600 focus:outline-none"
-            >
-              {/* Globe Icon */}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-gray-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3.6 9h16.8M3.6 15h16.8"
-                />
-
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M11.5 3a17 17 0 000 18M12.5 3a17 17 0 010 18"
-                />
-              </svg>
-
-              {/* Selected Language */}
-              <span>{selectedLang}</span>
-
-              {/* Arrow */}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${
-                  langOpen ? "rotate-180" : ""
-                }`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
-
-            {/* ================= LANGUAGE DROPDOWN ================= */}
-            {langOpen && (
-              <div className="absolute right-0 top-full z-[100] mt-2 w-36 overflow-hidden rounded-lg border border-gray-100 bg-white py-1 shadow-xl">
-                {languages.map((lang) => (
-                  <button
-                    key={lang.code}
-                    type="button"
-                    onClick={() => {
-                      setSelectedLang(lang.name);
-                      setLangOpen(false);
-                    }}
-                    className={`block w-full px-4 py-2.5 text-left text-sm transition-colors ${
-                      lang.name === selectedLang
-                        ? "bg-blue-50 font-semibold text-blue-600"
-                        : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
-                    }`}
-                  >
-                    {lang.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* ================= NOTIFICATION ================= */}
           <Link
             to={user ? "/notifications" : "/login"}
@@ -355,24 +258,6 @@ function Navbar() {
               >
                 {link.name}
               </NavLink>
-            ))}
-          </div>
-
-          {/* Mobile language */}
-          <div className="mt-3 flex items-center gap-2">
-            {languages.map((lang) => (
-              <button
-                key={lang.code}
-                type="button"
-                onClick={() => setSelectedLang(lang.name)}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                  lang.name === selectedLang
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {lang.name}
-              </button>
             ))}
           </div>
 

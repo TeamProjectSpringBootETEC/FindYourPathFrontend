@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import {
   Briefcase,
   LayoutGrid,
@@ -14,6 +14,7 @@ import {
   Bell,
   CalendarDays,
   BarChart3,
+  ArrowLeft,
   X,
 } from "lucide-react";
 
@@ -88,6 +89,15 @@ const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
           <X size={20} />
         </button>
       </div>
+
+      <Link
+        to="/"
+        onClick={onClose}
+        className="mt-4 flex items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
+      >
+        <ArrowLeft size={16} className="text-slate-400" />
+        Back to site
+      </Link>
 
       <nav className="space-y-1 mt-4">
         {mainNavItems.map((item) => (
