@@ -344,7 +344,12 @@ export default function JobDetail() {
                 quality solutions to clients across the region.
               </p>
 
-              <button className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline pt-1">
+              <button
+                onClick={() => job.companyId && navigate(`/company/${job.companyId}`)}
+                disabled={!job.companyId}
+                className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline pt-1 disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
+                title={job.companyId ? "View Company Profile" : "Company profile unavailable"}
+              >
                 View Company Profile <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>

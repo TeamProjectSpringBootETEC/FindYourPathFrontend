@@ -10,6 +10,8 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarDays,
+  Images,
+  ImageOff,
 } from "lucide-react";
 import { useCompany } from "../CompanyLayout";
 import NoCompanyNotice from "../NoCompanyNotice";
@@ -168,14 +170,41 @@ export default function EventList() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
-                  {paged.map((event) => (
+                  {paged.map((event) => {
+                    const cover = event.image;
+                    const imageCount = event.images?.length || (cover ? 1 : 0);
+                    return (
                     <tr key={event.id} className="hover:bg-slate-50/60 transition-colors">
                       <td className="py-3.5 px-6">
-                        <div>
-                          <p className="font-semibold text-slate-800">{event.title || "Untitled"}</p>
-                          <p className="text-xs text-slate-400 mt-0.5">
-                            {event.eventType || event.event_type || "Event"}
-                          </p>
+                        <div className="flex items-center gap-3">
+                          {cover ? (
+                            <div className="relative shrink-0">
+                              <img
+                                src={cover}
+                                alt=""
+                                className="w-11 h-11 rounded-lg object-cover border border-slate-200 bg-slate-50"
+                              />
+                              {imageCount > 1 && (
+                                <span
+                                  className="absolute -bottom-1.5 -right-1.5 inline-flex items-center gap-0.5 bg-slate-700 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm"
+                                  title={`${imageCount} images`}
+                                >
+                                  <Images className="w-2.5 h-2.5" />
+                                  {imageCount}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="shrink-0 w-11 h-11 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center">
+                              <ImageOff className="w-4 h-4 text-slate-300" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-semibold text-slate-800">{event.title || "Untitled"}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {event.eventType || event.event_type || "Event"}
+                            </p>
+                          </div>
                         </div>
                       </td>
                       <td className="py-3.5 px-6 text-slate-500 text-xs">
@@ -222,7 +251,8 @@ export default function EventList() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

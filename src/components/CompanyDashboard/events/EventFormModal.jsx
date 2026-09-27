@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { X, Loader2, CalendarDays } from "lucide-react";
-import { createEvent, updateEvent, getAllEventCategories } from "@/service/eventApi";
+import { toast } from "react-hot-toast";
+import {
+  createEvent,
+  updateEvent,
+  getAllEventCategories,
+  uploadEventImages,
+  deleteEventImage,
+} from "@/service/eventApi";
 import { useCompany } from "../CompanyLayout";
+import EventImageUploader from "./EventImageUploader";
 
 const inputClass =
   "w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition";
@@ -30,6 +38,8 @@ export default function EventFormModal({ open, onClose, event, onSaved }) {
   const [categories, setCategories] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [newFiles, setNewFiles] = useState([]);
+  const [removedIds, setRemovedIds] = useState([]);
 
   useEffect(() => {
     getAllEventCategories()
@@ -56,6 +66,8 @@ export default function EventFormModal({ open, onClose, event, onSaved }) {
     } else {
       setForm(initialForm);
     }
+    setNewFiles([]);
+    setRemovedIds([]);
   }, [event, open]);
 
   if (!open) return null;
@@ -86,14 +98,42 @@ export default function EventFormModal({ open, onClose, event, onSaved }) {
         fee: form.fee !== "" && form.fee != null ? Number(form.fee) : 0,
         status: form.status,
       };
+      let saved;
       if (event?.id) {
-        await updateEvent(event.id, payload);
+        saved = await updateEvent(event.id, payload);
       } else {
-        await createEvent(payload);
+        saved = await createEvent(payload);
+      }
+
+      const savedId = saved?.id;
+      const imageErrors = [];
+
+      if (newFiles.length && savedId) {
+        try {
+          await uploadEventImages(savedId, newFiles);
+        } catch (e) {
+          console.error("Failed to upload event images:", e);
+          imageErrors.push(`${newFiles.length} image(s) could not be uploaded`);
+        }
+      }
+
+      for (const attachmentId of removedIds) {
+        if (!savedId) break;
+        try {
+          await deleteEventImage(savedId, attachmentId);
+        } catch (e) {
+          console.error("Failed to delete event image:", e);
+          imageErrors.push("1 image could not be removed");
+        }
+      }
+
+      if (imageErrors.length) {
+        toast.error(`Event saved, but ${imageErrors.join(" and ")}.`);
       }
       onSaved?.();
     } catch (err) {
       console.error("Failed to save event:", err);
+      setError(err?.response?.data?.message || "Could not save the event. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -173,6 +213,17 @@ export default function EventFormModal({ open, onClose, event, onSaved }) {
               placeholder="What is this event about?"
             />
           </div>
+
+          <EventImageUploader
+            existingImages={event?.images || []}
+            newFiles={newFiles}
+            removedIds={removedIds}
+            disabled={saving}
+            onAddFiles={(files) => setNewFiles((prev) => [...prev, ...files])}
+            onRemoveNew={(index) => setNewFiles((prev) => prev.filter((_, i) => i !== index))}
+            onRemoveExisting={(id) => setRemovedIds((prev) => [...prev, id])}
+            onError={setError}
+          />
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
