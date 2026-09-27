@@ -20,6 +20,14 @@ const EVENT_STATUS = {
   cancelled: "bg-rose-50 text-rose-700 border border-rose-200",
 };
 
+const INTERVIEW_STATUS = {
+  PENDING: "bg-amber-50 text-amber-700 border border-amber-200",
+  IN_PROGRESS: "bg-blue-50 text-blue-700 border border-blue-200",
+  COMPLETED: "bg-violet-50 text-violet-700 border border-violet-200",
+  PASSED: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  FAILED: "bg-rose-50 text-rose-700 border border-rose-200",
+};
+
 export const statusStyle = (status, map) => {
   const key = String(status || "").toLowerCase();
   const styles = map || APPLICATION_STATUS;
@@ -29,6 +37,7 @@ export const statusStyle = (status, map) => {
 export const applicationBadge = (status) => statusStyle(status, APPLICATION_STATUS);
 export const jobBadge = (status) => statusStyle(status, JOB_STATUS);
 export const eventBadge = (status) => statusStyle(status, EVENT_STATUS);
+export const interviewBadge = (status) => statusStyle(status, INTERVIEW_STATUS);
 
 export const formatDate = (value) => {
   if (!value) return "N/A";

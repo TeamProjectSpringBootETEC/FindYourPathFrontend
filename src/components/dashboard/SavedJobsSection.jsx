@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Bookmark, Briefcase, Calendar, Clock, Trash2, ArrowUpRight } from "lucide-react";
 import { getSavedJobsByStudent, deleteSavedJob } from "@/service/savedJobApi";
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const fmtDate = (iso) => {
   if (!iso) return "—";
@@ -45,14 +47,14 @@ export default function SavedJobsSection({ userId }) {
   }, [userId]);
 
   const handleRemove = async (rec) => {
-    if (!window.confirm(`Remove "${rec.jobTitle}" from saved jobs?`)) return;
+    if (!(await confirmDialog({ message: `Remove "${rec.jobTitle}" from saved jobs?`, confirmLabel: "Confirm", cancelLabel: "Cancel" }))) return;
     try {
       setRemovingId(rec.id);
       await deleteSavedJob(rec.id);
       setItems((prev) => prev.filter((item) => item.id !== rec.id));
     } catch (err) {
       console.error("Failed to remove saved job:", err);
-      alert("Failed to remove saved job.");
+      toast.error("Failed to remove saved job.");
     } finally {
       setRemovingId(null);
     }

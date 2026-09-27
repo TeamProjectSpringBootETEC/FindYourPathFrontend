@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, CheckCircle } from 'lucide-react';
 import { registerUser } from '@/service/authApi';
 import GoogleLogin from '@/components/GoogleLogin';
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -193,7 +195,7 @@ export default function Register() {
           {/* LinkedIn Button */}
           <button
             type="button"
-            onClick={() => alert('LinkedIn registration clicked')}
+            onClick={() => toast('LinkedIn registration clicked', { icon: '🔗' })}
             className="flex items-center justify-center gap-2 border border-gray-200 hover:bg-gray-50 py-3 rounded-xl text-sm font-semibold text-gray-700 transition-colors shadow-sm"
           >
             <svg className="w-4 h-4 fill-[#0A66C2]" viewBox="0 0 24 24">

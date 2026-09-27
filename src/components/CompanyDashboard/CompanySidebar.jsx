@@ -6,6 +6,7 @@ import {
   Users,
   CalendarDays,
   Tags,
+  Tag,
   X,
 } from "lucide-react";
 
@@ -15,6 +16,7 @@ const mainNavItems = [
   { name: "Jobs", path: "/company-dashboard/jobs", icon: Briefcase },
   { name: "Applicants", path: "/company-dashboard/applicants", icon: Users },
   { name: "Events", path: "/company-dashboard/events", icon: CalendarDays },
+  { name: "Event Categories", path: "/company-dashboard/event-categories", icon: Tag },
   { name: "Categories", path: "/company-dashboard/categories", icon: Tags },
 ];
 

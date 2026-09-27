@@ -82,7 +82,7 @@ export default function EventList() {
   const paged = filtered.slice((safePage - 1) * rowsPerPage, safePage * rowsPerPage);
 
   const handleDelete = async (event) => {
-    if (!window.confirm(`Delete event "${event.title}"?`)) return;
+    if (!(await confirmDialog({ message: `Delete event "${event.title}"?`, confirmLabel: "Delete" }))) return;
     try {
       await deleteEvent(event.id);
       fetchEvents();

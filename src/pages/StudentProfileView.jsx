@@ -17,6 +17,7 @@ import { getStudentProfileById } from "@/service/studentProfileApi";
 import { getExperiencesByStudent } from "@/service/experienceApi";
 import { getEducationsByStudent } from "@/service/educationApi";
 import { getStudentSkillsByStudent } from "@/service/studentSkillApi";
+import Reveal from "@/components/Reveal";
 
 export default function StudentProfileView() {
   const { id } = useParams();
@@ -75,7 +76,7 @@ export default function StudentProfileView() {
           </div>
         ) : (
           <>
-            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <Reveal delay={100} className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
               <div className="px-7 py-6 bg-gradient-to-r from-indigo-50 via-slate-50 to-slate-50 border-b border-slate-100">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div className="flex items-center gap-4 min-w-0">
@@ -107,10 +108,10 @@ export default function StudentProfileView() {
                   )}
                 </div>
               </div>
-            </div>
+            </Reveal>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-6">
+              <Reveal delay={150} direction="right" className="space-y-6">
                 {profile.bio && (
                   <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
                     <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
@@ -157,9 +158,9 @@ export default function StudentProfileView() {
                     <p className="text-xs text-slate-400">No education history listed.</p>
                   )}
                 </div>
-              </div>
+              </Reveal>
 
-              <div className="space-y-6">
+              <Reveal delay={200} direction="left" className="space-y-6">
                 <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
                   <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                     <GraduationCap className="w-3.5 h-3.5 text-indigo-500" /> Academic Info
@@ -204,7 +205,7 @@ export default function StudentProfileView() {
                     </a>
                   </div>
                 )}
-              </div>
+              </Reveal>
             </div>
           </>
         )}

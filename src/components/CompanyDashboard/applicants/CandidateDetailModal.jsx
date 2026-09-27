@@ -17,11 +17,13 @@ import {
   UserRound,
 } from "lucide-react";
 import { getStudentProfileById } from "@/service/studentProfileApi";
+import { getInterviewByApplication, inviteCandidate } from "@/service/interviewApi";
 import {
   updateApplicationStatus,
   getStatusHistories,
 } from "@/service/applicationApi";
 import { applicationBadge, formatDateTime } from "../helpers";
+import InterviewReportCard from "./InterviewReportCard";
 
 const STATUS_STEPS = ["pending", "reviewing", "shortlisted", "accepted", "rejected"];
 
@@ -52,6 +54,8 @@ export default function CandidateDetailModal({ app, onClose, onStatusUpdated }) 
   const [profile, setProfile] = useState(null);
   const [history, setHistory] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [interview, setInterview] = useState(null);
+  const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -63,6 +67,9 @@ export default function CandidateDetailModal({ app, onClose, onStatusUpdated }) 
     getStatusHistories(app.id)
       .then((d) => active && setHistory(Array.isArray(d) ? d : []))
       .catch(() => {});
+    getInterviewByApplication(app.id)
+      .then((d) => active && setInterview(d))
+      .catch(() => {}); // No interview yet = not invited
     return () => {
       active = false;
     };
@@ -92,6 +99,18 @@ export default function CandidateDetailModal({ app, onClose, onStatusUpdated }) 
   };
 
   const isGood = app.aiDecision === "SHORTLISTED";
+
+  const startMockInterview = async () => {
+    setInviting(true);
+    try {
+      const created = await inviteCandidate(app.id);
+      setInterview(created);
+    } catch (err) {
+      console.error("Failed to invite candidate:", err);
+    } finally {
+      setInviting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 lg:p-8 bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
@@ -192,6 +211,34 @@ export default function CandidateDetailModal({ app, onClose, onStatusUpdated }) 
               </div>
               {app.aiSummary && <p className="text-sm text-slate-600 mt-3 leading-relaxed">{app.aiSummary}</p>}
               {app.aiAssessedAt && <p className="text-[11px] text-slate-400 mt-2">Assessed {formatDateTime(app.aiAssessedAt)}</p>}
+            </div>
+          )}
+
+          {/* AI Mock Interview */}
+          {interview ? (
+            <InterviewReportCard
+              interview={interview}
+              onResultUpdated={setInterview}
+            />
+          ) : (
+            <div className="rounded-2xl border border-dashed border-violet-300 bg-violet-50/30 p-5">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-violet-700">
+                  <Sparkles className="w-4 h-4" /> AI Mock Interview
+                </p>
+                <button
+                  onClick={startMockInterview}
+                  disabled={inviting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-bold shadow-md shadow-violet-100 transition disabled:opacity-50"
+                >
+                  {inviting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                  {inviting ? "Inviting…" : "Start Mock Interview"}
+                </button>
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                Send an AI interview invitation to this candidate. They'll answer a quiz + oral
+                questions and receive a Gemini-scored report right here.
+              </p>
             </div>
           )}
 

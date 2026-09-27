@@ -22,6 +22,8 @@ import {
   Layers,
   SlidersHorizontal,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
@@ -279,7 +281,7 @@ const Users = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+    if (!(await confirmDialog({ message: "Are you sure you want to delete this user?", confirmLabel: "Delete", cancelLabel: "Cancel" }))) return;
     try {
       await api.delete(`${API_BASE_URL}/${id}`);
       setUsers((prev) => prev.filter((item) => item.id !== id));
@@ -294,7 +296,7 @@ const Users = () => {
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     if (
-      !window.confirm(`Delete ${selectedIds.length} selected user(s)?`)
+      !(await confirmDialog({ message: `Delete ${selectedIds.length} selected user(s)?`, confirmLabel: "Delete", cancelLabel: "Cancel" }))
     )
       return;
 

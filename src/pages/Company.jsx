@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Reveal from '@/components/Reveal';
 import {
   Building2,
   MapPin,
@@ -80,16 +81,16 @@ export default function Company() {
   return (
     <div className="min-h-screen bg-gray-50/50 font-sans text-gray-800 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
-        <div className="text-center max-w-2xl mx-auto space-y-2">
+        <Reveal className="text-center max-w-2xl mx-auto space-y-2">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
             Explore Partner Companies
           </h1>
           <p className="text-sm text-gray-500">
             Browse companies, view their profile, and share your experience with a rating and review.
           </p>
-        </div>
+        </Reveal>
 
-        <div className="max-w-2xl mx-auto w-full bg-white border border-gray-200 rounded-2xl p-2 shadow-sm flex items-center">
+        <Reveal delay={100} className="max-w-2xl mx-auto w-full bg-white border border-gray-200 rounded-2xl p-2 shadow-sm flex items-center">
           <div className="flex items-center gap-3 px-3 w-full">
             <Search className="w-5 h-5 text-gray-400 shrink-0" />
             <input
@@ -100,9 +101,9 @@ export default function Company() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-        </div>
+        </Reveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Reveal delay={150} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.length === 0 && (
             <div className="col-span-full text-center py-16">
               <p className="text-gray-500 text-lg">No companies found.</p>
@@ -176,7 +177,7 @@ export default function Company() {
               </button>
             );
           })}
-        </div>
+        </Reveal>
       </div>
     </div>
   );

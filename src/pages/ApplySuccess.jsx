@@ -1,11 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
+import Reveal from "@/components/Reveal";
 
 export default function ApplySuccess() {
   return (
     <div className="min-h-screen bg-gray-50/50 font-sans text-gray-800 flex items-center justify-center p-4">
-      <div className="bg-white border border-gray-200 rounded-2xl p-10 text-center max-w-md shadow-sm">
+      <Reveal direction="zoom" className="bg-white border border-gray-200 rounded-2xl p-10 text-center max-w-md shadow-sm">
         <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
           <CheckCircle2 className="w-8 h-8 text-green-600" />
         </div>
@@ -20,7 +21,7 @@ export default function ApplySuccess() {
         >
           Browse More Jobs
         </Link>
-      </div>
+      </Reveal>
     </div>
   );
 }

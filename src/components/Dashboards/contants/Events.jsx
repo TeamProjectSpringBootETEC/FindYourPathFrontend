@@ -22,6 +22,8 @@ import {
   ImagePlus,
   Images,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 import {
   getAllevent,
   getAllEventCategories,
@@ -276,17 +278,17 @@ function Events() {
 
   const handleDeleteImage = async (attachmentId) => {
     if (!editingEvent) return;
-    if (!window.confirm("Are you sure you want to delete this image?")) return;
+    if (!(await confirmDialog({ message: "Are you sure you want to delete this image?", confirmLabel: "Delete", cancelLabel: "Cancel" }))) return;
     try {
       setDeletingImageId(attachmentId);
       await deleteEventImage(editingEvent.id, attachmentId);
       setExistingImages((prev) => prev.filter((img) => img.id !== attachmentId));
       fetchEvents();
-      alert("Image deleted successfully.");
+      toast.success("Image deleted successfully.");
     } catch (err) {
       console.error("Failed to delete event image:", err);
       const backendMessage = err.response?.data?.message || err.message;
-      alert(`Delete failed: ${backendMessage}`);
+      toast.error(`Delete failed: ${backendMessage}`);
     } finally {
       setDeletingImageId(null);
     }
@@ -343,7 +345,7 @@ function Events() {
     } catch (err) {
       console.error("Failed to save event:", err);
       const backendMessage = err.response?.data?.message || err.message;
-      alert(`Save failed: ${backendMessage}`);
+      toast.error(`Save failed: ${backendMessage}`);
     } finally {
       setSubmitting(false);
       setUploadingImages(false);
@@ -351,7 +353,7 @@ function Events() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this event?")) return;
+    if (!(await confirmDialog({ message: "Are you sure you want to delete this event?", confirmLabel: "Delete", cancelLabel: "Cancel" }))) return;
 
     try {
       setDeletingId(id);
@@ -359,7 +361,7 @@ function Events() {
       setEvents((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
       console.error("Failed to delete event:", err);
-      alert("Failed to delete event.");
+      toast.error("Failed to delete event.");
     } finally {
       setDeletingId(null);
     }

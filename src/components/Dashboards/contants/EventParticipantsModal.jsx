@@ -4,6 +4,8 @@ import {
   getRegistrationsByEventId,
   cancelRegistration,
 } from "@/service/eventRegistrationApi";
+import { toast } from "react-hot-toast";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const formatDate = (iso) => {
   if (!iso) return "—";
@@ -41,7 +43,7 @@ export default function EventParticipantsModal({ event, onClose, onChanged }) {
   }, [event.id]);
 
   const remove = async (reg) => {
-    if (!window.confirm("Remove this participant's registration?")) return;
+    if (!(await confirmDialog({ message: "Remove this participant's registration?", confirmLabel: "Confirm", cancelLabel: "Cancel" }))) return;
     setRemovingId(reg.id);
     try {
       await cancelRegistration(reg.id);
