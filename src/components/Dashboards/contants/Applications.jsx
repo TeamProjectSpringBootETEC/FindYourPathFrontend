@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { getAllApplications, assessApplication } from "@/service/applicationApi";
+import {
+  getAllApplications,
+  assessApplication,
+  updateApplicationStatusV2,
+} from "@/service/applicationApi";
+import { getCurrentUser } from "@/service/session";
 import {
   FileText,
   Search,
@@ -17,12 +22,15 @@ import { toast } from "react-hot-toast";
 import confirmDialog from "@/components/ConfirmDialog";
 
 // Data comes from the backend via GET /api/applications (applicationApi.getAllApplications).
+// These must match the backend's lower-case JobApplication.status values:
+// pending, reviewing, shortlisted, accepted, rejected, cancelled.
 const STATUS_STYLES = {
   PENDING: "bg-amber-50 text-amber-600 border border-amber-200",
   REVIEWING: "bg-sky-50 text-sky-600 border border-sky-200",
   SHORTLISTED: "bg-indigo-50 text-indigo-600 border border-indigo-200",
-  CONVERTED: "bg-emerald-50 text-emerald-600 border border-emerald-200",
+  ACCEPTED: "bg-emerald-50 text-emerald-600 border border-emerald-200",
   REJECTED: "bg-rose-50 text-rose-600 border border-rose-200",
+  CANCELLED: "bg-slate-100 text-slate-600 border border-slate-200",
 };
 
 const STATUS_OPTIONS = [
@@ -30,8 +38,9 @@ const STATUS_OPTIONS = [
   "PENDING",
   "REVIEWING",
   "SHORTLISTED",
-  "CONVERTED",
+  "ACCEPTED",
   "REJECTED",
+  "CANCELLED",
 ];
 
 function Applications() {
@@ -40,9 +49,39 @@ function Applications() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [assessingId, setAssessingId] = useState(null);
+  const [updatingId, setUpdatingId] = useState(null);
 
   const statusOf = (a) => String(a.status || "PENDING").toUpperCase();
-  const displayName = (a) => a.studentName || `Student #${a.studentProfileId || ""}`;
+  const displayName = (a) => a.studentName || `Student #${a.studentProfileId || "?"}`;
+
+  const handleUpdateStatus = async (app, nextStatus) => {
+    const current = statusOf(app);
+    if (nextStatus === current) return;
+    if (
+      !(await confirmDialog({
+        message: `Change status of ${displayName(app)}'s application from ${current} to ${nextStatus}?`,
+        confirmLabel: "Update",
+        cancelLabel: "Cancel",
+        tone: nextStatus === "REJECTED" ? "danger" : "default",
+      }))
+    )
+      return;
+
+    const admin = getCurrentUser();
+    setUpdatingId(app.id);
+    try {
+      const updated = await updateApplicationStatusV2(app.id, nextStatus.toLowerCase(), admin?.id);
+      setApplications((prev) =>
+        prev.map((a) => (a.id === app.id ? { ...a, ...(updated?.data || updated) } : a))
+      );
+      toast.success(`Status updated to ${nextStatus.toLowerCase()}`);
+    } catch (err) {
+      console.error("Failed to update status:", err);
+      toast.error(err.response?.data?.message || "Failed to update status.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const handleAssess = async (app) => {
     setAssessingId(app.id);
@@ -104,6 +143,47 @@ function Applications() {
     return map;
   }, [applications]);
 
+  const exportCSV = () => {
+    if (filtered.length === 0) {
+      toast.error("No applications to export.");
+      return;
+    }
+    const headers = [
+      "id",
+      "studentName",
+      "studentEmail",
+      "jobTitle",
+      "companyName",
+      "status",
+      "aiScore",
+      "aiDecision",
+      "appliedAt",
+    ];
+    const rows = filtered.map((a) => [
+      a.id,
+      displayName(a),
+      a.studentEmail || "",
+      a.jobTitle || "",
+      a.companyName || "",
+      a.status || "",
+      a.aiScore ?? "",
+      a.aiDecision || "",
+      a.appliedAt || "",
+    ]);
+    const csv = [
+      headers.join(","),
+      ...rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "applications.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Applications exported to CSV.");
+  };
+
   const formatDate = (d) => {
     if (!d) return "N/A";
     const dt = new Date(d);
@@ -145,7 +225,10 @@ function Applications() {
               className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all"
             />
           </div>
-          <button className="inline-flex items-center justify-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+          <button
+            onClick={exportCSV}
+            className="inline-flex items-center justify-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+          >
             <Download size={14} />
             Export CSV
           </button>
@@ -157,7 +240,7 @@ function Applications() {
         {STATUS_OPTIONS.slice(1).map((s) => {
           const count = countByStatus[s] || 0;
           const icon =
-            s === "CONVERTED" ? (
+            s === "ACCEPTED" ? (
               <CheckCircle2 size={16} />
             ) : s === "REJECTED" ? (
               <XCircle size={16} />
@@ -317,12 +400,27 @@ function Applications() {
                           )}
                           AI Check
                         </button>
-                        <button
-                          onClick={() => toast.success("Status update coming soon")}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 text-violet-700 hover:bg-violet-100 rounded-lg text-xs font-semibold transition"
-                        >
-                          Update Status
-                        </button>
+                        <div className="relative">
+                          <select
+                            value={statusOf(a)}
+                            onChange={(e) => handleUpdateStatus(a, e.target.value)}
+                            disabled={updatingId === a.id}
+                            className="appearance-none pr-7 px-3 py-1.5 bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 rounded-lg text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
+                            title="Update application status"
+                          >
+                            {STATUS_OPTIONS.slice(1).map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                          {updatingId === a.id && (
+                            <Loader2
+                              size={12}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin text-violet-600 pointer-events-none"
+                            />
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>

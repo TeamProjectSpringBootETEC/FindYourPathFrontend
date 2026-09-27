@@ -20,12 +20,13 @@ const EVENT_STATUS = {
   cancelled: "bg-rose-50 text-rose-700 border border-rose-200",
 };
 
+// statusStyle() lowercases the lookup key, so every map must use lower-case keys.
 const INTERVIEW_STATUS = {
-  PENDING: "bg-amber-50 text-amber-700 border border-amber-200",
-  IN_PROGRESS: "bg-blue-50 text-blue-700 border border-blue-200",
-  COMPLETED: "bg-violet-50 text-violet-700 border border-violet-200",
-  PASSED: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-  FAILED: "bg-rose-50 text-rose-700 border border-rose-200",
+  pending: "bg-amber-50 text-amber-700 border border-amber-200",
+  in_progress: "bg-blue-50 text-blue-700 border border-blue-200",
+  completed: "bg-violet-50 text-violet-700 border border-violet-200",
+  passed: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  failed: "bg-rose-50 text-rose-700 border border-rose-200",
 };
 
 export const statusStyle = (status, map) => {
@@ -39,9 +40,19 @@ export const jobBadge = (status) => statusStyle(status, JOB_STATUS);
 export const eventBadge = (status) => statusStyle(status, EVENT_STATUS);
 export const interviewBadge = (status) => statusStyle(status, INTERVIEW_STATUS);
 
+// The backend serializes LocalDate fields (Job.deadline, Event.eventDate) as
+// "yyyy-MM-dd". Per spec a date-only ISO string is parsed as UTC, so rendering it
+// directly shows the previous day in any timezone ahead of UTC. Parse the parts
+// and build a local Date instead.
+const parseLocalDate = (value) => {
+  const [y, m, d] = String(value).slice(0, 10).split("-");
+  if (!y || !m || !d) return new Date(value);
+  return new Date(Number(y), Number(m) - 1, Number(d));
+};
+
 export const formatDate = (value) => {
   if (!value) return "N/A";
-  const d = new Date(value);
+  const d = parseLocalDate(value);
   if (isNaN(d)) return value;
   return d.toLocaleDateString("en-US", {
     month: "short",

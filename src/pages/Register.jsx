@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Mail, Lock, CheckCircle } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, CheckCircle, Briefcase, UserRound } from 'lucide-react';
 import { registerUser } from '@/service/authApi';
 import GoogleLogin from '@/components/GoogleLogin';
-import { toast } from "react-hot-toast";
-import confirmDialog from "@/components/ConfirmDialog";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -20,11 +18,18 @@ export default function Register() {
     agreeTerms: false,
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     if (!formData.agreeTerms) {
       setError('Please agree to the Terms of Service and Privacy Policy.');
+      return;
+    }
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters.');
       return;
     }
     if (formData.password !== formData.confirmPassword) {
@@ -82,7 +87,7 @@ export default function Register() {
               {error}
             </div>
           )}
-          
+        
           {/* Full Name Input */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-gray-700">Full Name</label>
@@ -125,28 +130,51 @@ export default function Register() {
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-gray-700">Password</label>
               <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
+                  <Lock className="w-4 h-4" />
+                </span>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="••••••••"
+                  minLength={6}
+                  placeholder="At least 6 characters"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
+                  className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-10 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-700">Confirm</label>
+              <label className="text-xs font-semibold text-gray-700">Confirm Password</label>
               <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
+                  <Lock className="w-4 h-4" />
+                </span>
                 <input
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                   required
                   placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
+                  className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-10 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -162,7 +190,8 @@ export default function Register() {
               className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
             />
             <label htmlFor="terms" className="text-xs text-gray-600 cursor-pointer select-none">
-              I agree to the <a href="#terms" className="text-blue-600 font-medium hover:underline">Terms of Service</a> and <a href="#privacy" className="text-blue-600 font-medium hover:underline">Privacy Policy</a>.
+              I agree to the <span className="text-blue-600 font-medium">Terms of Service</span> and{' '}
+              <span className="text-blue-600 font-medium">Privacy Policy</span>.
             </label>
           </div>
 
@@ -183,27 +212,12 @@ export default function Register() {
           <div className="flex-grow border-t border-gray-200"></div>
         </div>
 
-        {/* Social Authentication Buttons */}
-        <div className="grid grid-cols-2 gap-4">
-          
-          {/* Google Button */}
+        {/* Social Authentication */}
+        <div className="space-y-4">
           <GoogleLogin
             roleId={accountType === 'Employer' ? 2 : 3}
             onError={setError}
           />
-
-          {/* LinkedIn Button */}
-          <button
-            type="button"
-            onClick={() => toast('LinkedIn registration clicked', { icon: '🔗' })}
-            className="flex items-center justify-center gap-2 border border-gray-200 hover:bg-gray-50 py-3 rounded-xl text-sm font-semibold text-gray-700 transition-colors shadow-sm"
-          >
-            <svg className="w-4 h-4 fill-[#0A66C2]" viewBox="0 0 24 24">
-              <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-            </svg>
-            LinkedIn
-          </button>
-
         </div>
 
         {/* Switch to Login */}

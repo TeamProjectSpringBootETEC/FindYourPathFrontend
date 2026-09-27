@@ -88,10 +88,8 @@ function Overview() {
     () => notifications.filter((n) => !n.isRead && !n.read),
     [notifications]
   );
-  const verifiedCompanies = useMemo(
-    () => companies.filter((c) => c.isVerified || c.verified),
-    [companies]
-  );
+  // NOTE: the Company model has no verification flag, so a "verified" count
+  // cannot be computed from the API. Do not display a hard-coded 0 here.
 
   const stats = [
     {
@@ -105,7 +103,6 @@ function Overview() {
     {
       label: "Companies",
       value: companies.length,
-      sub: `${verifiedCompanies.length} verified`,
       icon: Building2,
       color: "bg-sky-50 text-sky-600",
       ring: "ring-sky-100",
@@ -168,15 +165,13 @@ function Overview() {
       .slice(0, 5);
   }, [jobs]);
 
-  // Role distribution for mini chart
+  // Role distribution for mini chart.
+  // UserResponseDTO exposes roleId / roleName (camelCase) - there is no nested
+  // role object and no snake_case field.
   const roleDistribution = useMemo(() => {
     const map = {};
     users.forEach((u) => {
-      const roleName =
-        u.role?.role_name ||
-        u.role?.name ||
-        u.role_name ||
-        `Role #${u.role_id || "?"}`;
+      const roleName = u.roleName || `Role #${u.roleId ?? "?"}`;
       map[roleName] = (map[roleName] || 0) + 1;
     });
     return Object.entries(map)

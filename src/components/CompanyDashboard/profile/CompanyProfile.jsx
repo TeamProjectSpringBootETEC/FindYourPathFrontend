@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Building2, Loader2, UploadCloud, Trash2, ImagePlus, Globe, MapPin, Info } from "lucide-react";
+import { toast } from "react-hot-toast";
 import { useCompany } from "../CompanyLayout";
 import {
   createCompany,
@@ -42,7 +43,7 @@ export default function CompanyProfile() {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "null");
       if (companyId) {
-        const updated = await updateCompany(companyId, form);
+        const updated = await updateCompany(companyId, { ...form, userId: user?.id });
         setCompany(updated);
       } else {
         const created = await createCompany({ ...form, userId: user?.id });
@@ -51,6 +52,7 @@ export default function CompanyProfile() {
       await refreshCompany();
     } catch (err) {
       console.error("Failed to save company profile:", err);
+      toast.error(err.response?.data?.message || "Failed to save company profile.");
     } finally {
       setSaving(false);
     }
@@ -66,6 +68,7 @@ export default function CompanyProfile() {
       await refreshCompany();
     } catch (err) {
       console.error("Failed to upload logo:", err);
+      toast.error(err.response?.data?.message || "Failed to upload logo.");
     } finally {
       setUploading(false);
     }
@@ -79,6 +82,7 @@ export default function CompanyProfile() {
       await refreshCompany();
     } catch (err) {
       console.error("Failed to remove logo:", err);
+      toast.error(err.response?.data?.message || "Failed to remove logo.");
     }
   };
 

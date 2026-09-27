@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import axios from "axios";
 import {
   Bell,
   Search,
@@ -18,9 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import confirmDialog from "@/components/ConfirmDialog";
-
-const API_BASE_URL = "http://localhost:8089/api/notifications";
-const USERS_API_URL = "http://localhost:8089/api/v1/users";
+import api from "@/service/api";
 
 const initialFormState = {
   userId: "",
@@ -42,11 +39,12 @@ function Notifications() {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_BASE_URL);
-      const data = response.data.data || response.data;
+      const response = await api.get("/notifications");
+      const data = response.data;
       setNotifications(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch notifications:", err);
+      toast.error(err.response?.data?.message || "Failed to load notifications.");
     } finally {
       setLoading(false);
     }
@@ -54,8 +52,8 @@ function Notifications() {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(USERS_API_URL);
-      const data = response.data.data || response.data;
+      const response = await api.get("/v1/users");
+      const data = response.data;
       setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch users:", err);
@@ -105,7 +103,7 @@ function Notifications() {
 
     try {
       setSubmitting(true);
-      await axios.post(API_BASE_URL, {
+      await api.post("/notifications", {
         userId: Number(formData.userId),
         title: formData.title.trim(),
         message: formData.message.trim(),
@@ -124,22 +122,24 @@ function Notifications() {
 
   const handleMarkRead = async (n) => {
     try {
-      await axios.put(`${API_BASE_URL}/${n.id}/read`);
+      await api.put(`/notifications/${n.id}/read`);
       setNotifications((prev) =>
         prev.map((item) => (item.id === n.id ? { ...item, isRead: true, read: true } : item))
       );
     } catch (err) {
       console.error("Failed to mark as read:", err);
+      toast.error(err.response?.data?.message || "Failed to mark as read.");
     }
   };
 
   const handleDelete = async (id) => {
     if (!(await confirmDialog({ message: "Delete this notification?", confirmLabel: "Delete", cancelLabel: "Cancel" }))) return;
     try {
-      await axios.delete(`${API_BASE_URL}/${id}`);
+      await api.delete(`/notifications/${id}`);
       setNotifications((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
       console.error("Failed to delete notification:", err);
+      toast.error(err.response?.data?.message || "Failed to delete notification.");
     }
   };
 

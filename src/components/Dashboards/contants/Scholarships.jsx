@@ -65,7 +65,18 @@ function Scholarships() {
   }, [scholarships, searchQuery]);
 
   const openCount = scholarships.filter((s) => s.status === "OPEN").length;
-  const totalValue = scholarships.length * 7500;
+
+  // Amounts are free-text ("$5,000 / year"), so sum the leading dollar figure
+  // rather than multiplying the row count by a hard-coded average.
+  const parsedAmount = (value) => {
+    const digits = String(value || "").replace(/[^0-9.]/g, "");
+    const n = Number.parseFloat(digits);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const totalValue = scholarships.reduce((sum, s) => sum + parsedAmount(s.amount), 0);
+  const avgValue = scholarships.length ? totalValue / scholarships.length : 0;
+  const formatUsd = (n) =>
+    n >= 1000 ? `$${(n / 1000).toFixed(1)}K` : `$${Math.round(n).toLocaleString()}`;
 
   const openCreateModal = () => {
     setEditingScholarship(null);
@@ -170,8 +181,8 @@ function Scholarships() {
           {[
             { label: "Total Scholarships", value: scholarships.length, Icon: Award, color: "bg-emerald-50 text-emerald-600" },
             { label: "Open Applications", value: openCount, Icon: BadgeCheck, color: "bg-sky-50 text-sky-600" },
-            { label: "Avg Scholarships Value", value: "$7.5K", Icon: CircleDollarSign, color: "bg-violet-50 text-violet-600" },
-            { label: "Estimated Value", value: `$${(totalValue / 1000).toFixed(1)}K`, Icon: DollarSign, color: "bg-amber-50 text-amber-600" },
+            { label: "Avg Scholarships Value", value: formatUsd(avgValue), Icon: CircleDollarSign, color: "bg-violet-50 text-violet-600" },
+            { label: "Estimated Value", value: formatUsd(totalValue), Icon: DollarSign, color: "bg-amber-50 text-amber-600" },
           ].map(({ label, value, Icon, color }) => (
             <div key={label} className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3.5">
               <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center shrink-0`}>

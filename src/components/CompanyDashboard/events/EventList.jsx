@@ -16,6 +16,7 @@ import NoCompanyNotice from "../NoCompanyNotice";
 import { getEventsByCompanyId, deleteEvent } from "@/service/eventApi";
 import EventFormModal from "./EventFormModal";
 import { eventBadge, formatDate } from "../helpers";
+import confirmDialog from "@/components/ConfirmDialog";
 
 const ROWS_OPTIONS = [5, 10, 25, 50];
 

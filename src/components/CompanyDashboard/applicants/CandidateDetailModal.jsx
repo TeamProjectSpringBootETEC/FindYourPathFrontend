@@ -218,7 +218,21 @@ export default function CandidateDetailModal({ app, onClose, onStatusUpdated }) 
           {interview ? (
             <InterviewReportCard
               interview={interview}
-              onResultUpdated={setInterview}
+              onResultUpdated={(updated) => {
+                setInterview(updated);
+                // Finalising an interview also moves the application to
+                // accepted/rejected on the backend (InterviewService#setResult),
+                // so propagate that or the modal keeps showing the old status.
+                const nextStatus =
+                  String(updated?.status || "").toUpperCase() === "PASSED"
+                    ? "accepted"
+                    : String(updated?.status || "").toUpperCase() === "FAILED"
+                      ? "rejected"
+                      : null;
+                if (nextStatus) {
+                  onStatusUpdated?.({ ...app, status: nextStatus });
+                }
+              }}
             />
           ) : (
             <div className="rounded-2xl border border-dashed border-violet-300 bg-violet-50/30 p-5">

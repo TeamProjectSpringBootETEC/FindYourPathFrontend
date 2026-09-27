@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import { FileText, Briefcase, Calendar, ArrowUpRight } from "lucide-react";
 import { getApplicationsByStudent } from "@/service/applicationApi";
 
+// Must match the backend's lower-case JobApplication.status values.
 const STATUS_STYLES = {
   PENDING: "bg-amber-50 text-amber-600 ring-amber-200",
   REVIEWING: "bg-blue-50 text-blue-600 ring-blue-200",
-  INTERVIEWING: "bg-violet-50 text-violet-600 ring-violet-200",
+  SHORTLISTED: "bg-violet-50 text-violet-600 ring-violet-200",
   ACCEPTED: "bg-emerald-50 text-emerald-600 ring-emerald-200",
   REJECTED: "bg-rose-50 text-rose-600 ring-rose-200",
+  CANCELLED: "bg-slate-50 text-slate-600 ring-slate-200",
 };
 const fallbackStyle = "bg-slate-50 text-slate-600 ring-slate-200";
 

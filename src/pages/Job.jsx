@@ -20,7 +20,9 @@ import confirmDialog from "@/components/ConfirmDialog";
 
 const ITEMS_PER_PAGE = 6;
 
-const EMPLOYMENT_TYPES = ['Full-time', 'Part-time', 'Remote', 'Internship'];
+// Must match JobFormModal TYPE_OPTIONS (Job.jobType). "Remote"/"Hybrid" are
+// workplaceType values, not jobType, so they can never match here.
+const EMPLOYMENT_TYPES = ['Full-time', 'Part-time', 'Internship', 'Contract'];
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest' },
@@ -194,9 +196,9 @@ export default function Job() {
       const q = appliedFilters.search.toLowerCase();
       result = result.filter(
         (job) =>
-          job.title.toLowerCase().includes(q) ||
+          (job.title || '').toLowerCase().includes(q) ||
           (job.companyName || '').toLowerCase().includes(q) ||
-          job.location.toLowerCase().includes(q)
+          (job.location || '').toLowerCase().includes(q)
       );
     }
 
@@ -275,22 +277,6 @@ export default function Job() {
     return pages;
   };
 
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p>Loading jobs...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-red-500">{error}</p>
-      </div>
-    );
-  }
 
   if (loading) {
     return (

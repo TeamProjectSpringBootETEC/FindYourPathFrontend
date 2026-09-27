@@ -169,11 +169,11 @@ export default function Events() {
       const q = search.toLowerCase();
       result = result.filter(
         (event) =>
-          event.title.toLowerCase().includes(q) ||
-          event.location.toLowerCase().includes(q) ||
-          event.type.toLowerCase().includes(q) ||
-          event.organization.toLowerCase().includes(q) ||
-          event.tags.some((tag) => tag.toLowerCase().includes(q))
+          (event.title || '').toLowerCase().includes(q) ||
+          (event.location || '').toLowerCase().includes(q) ||
+          (event.type || '').toLowerCase().includes(q) ||
+          (event.organization || '').toLowerCase().includes(q) ||
+          (event.tags || []).some((tag) => String(tag).toLowerCase().includes(q))
       );
     }
 

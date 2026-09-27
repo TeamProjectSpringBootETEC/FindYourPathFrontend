@@ -14,6 +14,7 @@ import {
   Loader2,
   Download,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 import { getAllJob, getAllJobCategories } from "@/service/JobApi";
 import { getAllCompanies } from "@/service/CompanyApi";
 import { getAllApplications } from "@/service/applicationApi";
@@ -193,6 +194,39 @@ function Reports() {
   }, [applications]);
   const maxTrend = Math.max(...trend.items.map((it) => it.count), 1);
 
+  const exportReport = () => {
+    if (applications.length === 0) {
+      toast.error("No data to export.");
+      return;
+    }
+    const periodRows = kpi.map((s) => [s.label, s.value, s.delta ?? ""]);
+    const funnelRows = funnel.stages.map((s) => [s.label, s.value]);
+    const trendRows = trend.items.map((t) => [t.label, t.count]);
+
+    const section = (title, rows) => [[title], ...rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`))];
+
+    const csv = [
+      `"Platform Report - ${timeRange}"`,
+      "",
+      ...section("Key metrics", periodRows),
+      "",
+      ...section("Hiring funnel", funnelRows),
+      "",
+      ...section("Applications by month", trendRows),
+    ]
+      .flat()
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `platform-report-${timeRange.toLowerCase().replace(/\s+/g, "-")}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Report exported to CSV.");
+  };
+
   // Jobs by category (real data)
   const getJobCategoryId = (job) =>
     job.category_id ??
@@ -284,7 +318,10 @@ function Reports() {
               </button>
             ))}
           </div>
-          <button className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+          <button
+            onClick={exportReport}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+          >
             <Download size={14} />
             Export Report
           </button>
