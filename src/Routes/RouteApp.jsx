@@ -175,6 +175,7 @@ function RouteApp() {
         <Route path="applicants" element={<ApplicantList />} />
         <Route path="events" element={<EventList />} />
         <Route path="events/:eventId/participants" element={<EventParticipants />} />
+        <Route path="event-categories" element={<EventCategory />} />
         <Route path="categories" element={<CategoryJob />} />
       </Route>
     </Routes>
